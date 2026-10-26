@@ -29,7 +29,7 @@ const Stats = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const apiUrl = "https://shaadi-undo-backend.onrender.com/api/professionals/stats/123";
+  const apiUrl = "https://shadi-undo-backend.onrender.com/api/professionals/stats/123";
 
   useEffect(() => {
     let mounted = true;

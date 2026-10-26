@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Button, Form, Row, Col, Alert, Image, Spinner, Card, Container, ProgressBar } from "react-bootstrap";
 import { FaLock, FaMoneyBillWave, FaClock, FaPlus, FaTrash, FaRegCalendarAlt } from "react-icons/fa";
 
-const API_BASE = "https://shaadi-undo-backend.onrender.com";
+const API_BASE = "https://shadi-undo-backend.onrender.com";
 
 const STATUS_COLORS = {
   completed: "#28a745",   // green

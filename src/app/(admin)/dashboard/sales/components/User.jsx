@@ -25,7 +25,7 @@ const Users = () => {
         setLoading(true);
 
         const response = await fetch(
-          "https://shaadi-undo-backend.onrender.com/api/auth/clients"
+          "https://shadi-undo-backend.onrender.com/api/auth/clients"
         );
 
         if (!response.ok) {

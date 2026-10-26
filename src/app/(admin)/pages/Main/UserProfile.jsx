@@ -52,7 +52,7 @@ const statusColors = (status) => {
 };
 
 
-const RENDER_API = import.meta.env.VITE_API_URL || ""; // e.g. "https://shaadi-undo-backend.onrender.com"
+const RENDER_API = import.meta.env.VITE_API_URL || ""; // e.g. "https://shadi-undo-backend.onrender.com"
 function buildUrl(path) {
   if (!path || typeof path !== "string") return path;
   if (/^https?:\/\//i.test(path)) return path;

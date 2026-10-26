@@ -7,7 +7,7 @@ const PriorityProfessionTable = () => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const API_BASE = "https://shaadi-undo-backend.onrender.com";
+    const API_BASE = "https://shadi-undo-backend.onrender.com";
     const ROLES = ["lawyer", "mediator", "counsellor", "therapist"];
 
     const fetchEarnings = async (professionalId, token) => {

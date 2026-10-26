@@ -35,8 +35,8 @@ const SalesByCategory = () => {
 
         const url =
           period === 'year'
-            ? `https://shaadi-undo-backend.onrender.com/api/appointments/stats?period=year&year=${selectedYear}`
-            : `https://shaadi-undo-backend.onrender.com/api/appointments/stats?period=${period}`;
+            ? `https://shadi-undo-backend.onrender.com/api/appointments/stats?period=year&year=${selectedYear}`
+            : `https://shadi-undo-backend.onrender.com/api/appointments/stats?period=${period}`;
 
         const res = await fetch(url, {
           headers: {

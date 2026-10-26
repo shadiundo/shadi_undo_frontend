@@ -486,7 +486,7 @@ export default function ProfilePage() {
           }, 1000);
           return;
         }
-        const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:5000" : "https://shaadi-undo-backend.onrender.com");
+        const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:5000" : "https://shadi-undo-backend.onrender.com");
         const url = `${apiBase}/api/professionals/search?id=${encodeURIComponent(routeId)}`;
         const headers = { Accept: "application/json" };
         if (token) headers.Authorization = `Bearer ${token}`;
@@ -534,7 +534,7 @@ export default function ProfilePage() {
       try {
         setSlotsLoading(true);
         setSlotsError(null);
-        const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:5000" : "https://shaadi-undo-backend.onrender.com");
+        const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:5000" : "https://shadi-undo-backend.onrender.com");
         const profId = encodeURIComponent(profile._id || profile.id);
         const from = new Date();
         const to = new Date();
@@ -590,7 +590,7 @@ export default function ProfilePage() {
         setRelated([]);
         const apiBase =
           import.meta.env.VITE_API_URL ||
-          (import.meta.env.DEV ? "http://localhost:5000" : "https://shaadi-undo-backend.onrender.com");
+          (import.meta.env.DEV ? "http://localhost:5000" : "https://shadi-undo-backend.onrender.com");
         const endpoints = [
           `${apiBase}/api/auth/professionals`,
           `${apiBase}/api/professionals`,

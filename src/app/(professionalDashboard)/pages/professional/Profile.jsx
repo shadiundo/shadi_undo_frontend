@@ -315,7 +315,7 @@ export default function Profile() {
 
         const apiBase =
           import.meta.env.VITE_API_URL ||
-          (import.meta.env.DEV ? "http://localhost:5000" : "https://shaadi-undo-backend.onrender.com");
+          (import.meta.env.DEV ? "http://localhost:5000" : "https://shadi-undo-backend.onrender.com");
         const url = `${apiBase}/api/professionals/search?id=${encodeURIComponent(routeId)}`;
 
         const headers = { Accept: "application/json" };
@@ -372,7 +372,7 @@ export default function Profile() {
       try {
         const apiBase =
           import.meta.env.VITE_API_URL ||
-          (import.meta.env.DEV ? "http://localhost:5000" : "https://shaadi-undo-backend.onrender.com");
+          (import.meta.env.DEV ? "http://localhost:5000" : "https://shadi-undo-backend.onrender.com");
 
         // Fetch appointments for this professional
         const url = `${apiBase}/api/appointments/professional/recent?limit=100`;

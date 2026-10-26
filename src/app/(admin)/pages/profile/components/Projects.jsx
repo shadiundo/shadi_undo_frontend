@@ -130,7 +130,7 @@ const AdminRecentAppointments = ({ professionalId: propProfessionalId }) => {
   const [error, setError] = useState(null);
 
   // local backend only
-  const API_BASE = "https://shaadi-undo-backend.onrender.com";
+  const API_BASE = "https://shadi-undo-backend.onrender.com";
 
   // token only from localStorage
   const token = localStorage.getItem("token");

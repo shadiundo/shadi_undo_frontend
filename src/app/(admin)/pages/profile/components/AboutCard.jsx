@@ -140,8 +140,8 @@ const AboutCard = ({ professional, loading, onStatusChange }) => {
   const avatar = professional.image || avatarForId(_id);
 
   // API endpoints (matches your routes file)
-  const APPROVE_URL = `https://shaadi-undo-backend.onrender.com/api/professionals/${_id}/approve`;
-  const REJECT_URL = `https://shaadi-undo-backend.onrender.com/api/professionals/${_id}/reject`;
+  const APPROVE_URL = `https://shadi-undo-backend.onrender.com/api/professionals/${_id}/approve`;
+  const REJECT_URL = `https://shadi-undo-backend.onrender.com/api/professionals/${_id}/reject`;
 
   async function callApprove() {
     if (!window.confirm(`Approve profile of ${name}?`)) return;

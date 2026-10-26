@@ -12,7 +12,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://shaadi-undo-backend.onrender.com",
+        target: "https://shadi-undo-backend.onrender.com",
         changeOrigin: true,
         secure: false,
       },

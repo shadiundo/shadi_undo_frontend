@@ -42,7 +42,7 @@ const OverviewChart = () => {
         }
 
         const res = await fetch(
-          `https://shaadi-undo-backend.onrender.com/api/appointments/overview?${params.toString()}`,
+          `https://shadi-undo-backend.onrender.com/api/appointments/overview?${params.toString()}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,

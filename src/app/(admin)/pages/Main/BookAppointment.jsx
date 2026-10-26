@@ -31,7 +31,7 @@ export default function BookAppointment() {
   const location = useLocation();
   const navigate = useNavigate();
   const bookingDraft = location.state?.bookingDraft ?? null;
-  const apiBase = "https://shaadi-undo-backend.onrender.com";
+  const apiBase = "https://shadi-undo-backend.onrender.com";
 
   const [professional, setProfessional] = useState(bookingDraft?.professional ?? null);
   const [loadingProfile, setLoadingProfile] = useState(Boolean(!bookingDraft?.professional && bookingDraft?.professionalId));

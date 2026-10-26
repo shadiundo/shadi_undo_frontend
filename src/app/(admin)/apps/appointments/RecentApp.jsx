@@ -11,7 +11,7 @@ const AllAppointments = () => {
     const fetchAllAppointments = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("https://shaadi-undo-backend.onrender.com/api/appointments/admin/recent", {
+        const res = await axios.get("https://shadi-undo-backend.onrender.com/api/appointments/admin/recent", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setAppointments(res.data?.data || []);

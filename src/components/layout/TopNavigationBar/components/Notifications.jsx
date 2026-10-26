@@ -38,7 +38,7 @@ const Notifications = () => {
     return stored ? new Date(stored) : new Date(0); // Epoch if never cleared
   });
 
-  const BASE_URL = import.meta.env.VITE_API_URL || "https://shaadi-undo-backend.onrender.com";
+  const BASE_URL = import.meta.env.VITE_API_URL || "https://shadi-undo-backend.onrender.com";
 
   const fetchData = useCallback(async () => {
     try {

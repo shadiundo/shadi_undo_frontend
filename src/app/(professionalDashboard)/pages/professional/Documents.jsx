@@ -27,7 +27,7 @@ export default function Documents() {
     import.meta.env.VITE_API_URL ||
     (import.meta.env.DEV
       ? "http://localhost:5000"
-      : "https://shaadi-undo-backend.onrender.com");
+      : "https://shadi-undo-backend.onrender.com");
 
   useEffect(() => {
     if (!file) return setFilePreview(null);

@@ -12,7 +12,7 @@ import {
 import IconifyIcon from "@/components/wrappers/IconifyIcon";
 
 // API base (Vite env or fallback)
-const API_BASE = (import.meta.env.VITE_API_BASE || "https://shaadi-undo-backend.onrender.com").replace(/\/$/, "");
+const API_BASE = (import.meta.env.VITE_API_BASE || "https://shadi-undo-backend.onrender.com").replace(/\/$/, "");
 
 /** Build absolute URL and sanitize */
 function ensureAbsoluteUrl(maybeUrl) {
