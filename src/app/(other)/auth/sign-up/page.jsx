@@ -1,0 +1,54 @@
+import { Card, CardBody, Col, Row } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
+import LogoBox from '@/components/LogoBox';
+import PageMetaData from '@/components/PageTitle';
+
+import SignUpForm from './components/SignUpForm';
+import signUpImg from '@/assets/images/sign-in.png';
+const SignUp = () => {
+  return <>
+      <PageMetaData title="Sign Up" />
+
+      <Card className="auth-card">
+        <CardBody className="p-0">
+          <Row className="align-items-center g-0">
+            <Col lg={6} className="d-none d-lg-inline-block border-end">
+              <div className="auth-page-sidebar">
+                <img src={signUpImg} width={521} height={521} alt="auth" className="img-fluid" />
+              </div>
+            </Col>
+            <Col lg={6}>
+              <div className="p-4">
+                <LogoBox textLogo={{
+                height: 55,
+                width: 84
+              }} squareLogo={{
+                className: 'me-1'
+              }} containerClassName="mx-auto mb-4 text-center auth-logo" />
+                <h2 className="fw-bold text-center fs-28">Sign Up</h2>
+                <p className="text-muted text-center mt-1 mb-4">New to our platform? Sign up now! It only takes a minute.</p>
+                <Row className="justify-content-center">
+                  <Col xs={12} md={8}>
+                    <SignUpForm />
+                    
+                  </Col>
+                </Row>
+      <p className="text-muted mt-3 text-center">
+        I already have an account
+        <Link to="/auth/sign-in" className="text-black  fw-bold ms-1">
+          Sign In
+        </Link>
+      </p>
+<p className=" mt-2 text-center">
+  Want to register as a professional?{" "}
+  <a href="/auth/professional-signup "  className="text-black  fw-bold ms-1">Sign up as a Lawyer/Mediator/etc.</a>
+</p>
+              </div>
+            </Col>
+          </Row>
+        </CardBody>
+      </Card>
+
+    </>;
+};
+export default SignUp;

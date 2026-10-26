@@ -1,0 +1,466 @@
+/* src/app/(professionalDashboard)/pages/professional/Profile.css */
+
+.profile-page {
+    width: 100%;
+    padding-top: 40px;
+    padding-bottom: 40px;
+    background-color: var(--bg);
+    box-sizing: border-box;
+    /* details */
+    display: flex;
+    justify-content: center;
+    color: var(--text);
+}
+
+.profile-container {
+    width: 100%;
+    max-width: 1100px;
+    background-color: var(--panel);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    /* default light */
+    border: 1px solid var(--border);
+}
+
+body.dark-mode .profile-container {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+/* Header */
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    background-color: var(--accent);
+    gap: 16px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.profile-avatar {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.header-text {
+    color: var(--panel);
+    line-height: 1.1;
+}
+
+.profile-name {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--panel);
+}
+
+.profile-subtitle {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+}
+
+.status-badge {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-weight: 700;
+    min-width: 160px;
+    justify-content: center;
+    color: #fff;
+    cursor: default;
+    box-shadow: none;
+}
+
+/* Body Layout */
+.profile-body-row {
+    display: flex;
+    gap: 24px;
+    padding: 24px;
+    box-sizing: border-box;
+    align-items: flex-start;
+}
+
+.profile-left-col {
+    flex: 0 0 66.666%;
+    min-width: 0;
+    /* allows flex item to shrink below content size */
+    box-sizing: border-box;
+}
+
+.profile-right-col {
+    flex: 0 0 31.333%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+/* Cards */
+.profile-card {
+    background-color: var(--panel);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: none;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+}
+
+.profile-heading {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--text);
+}
+
+.profile-paragraph {
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 16px;
+}
+
+.badge-tag {
+    display: inline-block;
+    background-color: #CAAA94;
+    color: #FFF;
+    padding: 6px 12px;
+    border-radius: 20px;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+}
+
+.list-small {
+    padding-left: 18px;
+    margin-top: 4px;
+    margin-bottom: 12px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.exp-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.exp-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    background-color: var(--panel);
+    font-size: 28px;
+    flex-shrink: 0;
+    /* prevent shrinking */
+    border: 1px solid var(--border);
+}
+
+.exp-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.exp-meta {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.education-item {
+    margin-bottom: 12px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+/* Stats Box */
+.stats-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.stat-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background-color: rgba(252, 237, 230, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 27px;
+    color: var(--accent);
+}
+
+.stat-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* Calendar & Booking */
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.month-nav-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+}
+
+.time-select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    background: transparent;
+    color: var(--text);
+}
+
+.book-btn {
+    width: 100%;
+    background-color: var(--accent);
+    border: none;
+    color: var(--panel);
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    margin-top: 12px;
+}
+
+/* Reviews */
+.reviews-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.review-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.rating-bubble {
+    background-color: var(--panel);
+    padding: 8px 12px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border);
+}
+
+.star-row {
+    color: #f5c518;
+    font-weight: 700;
+}
+
+.review-item {
+    background-color: var(--panel);
+    padding: 12px;
+    border-radius: 8px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    border: 1px solid var(--border);
+}
+
+.reviewer-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.04);
+    display: inline-block;
+    text-align: center;
+    line-height: 40px;
+    font-weight: 700;
+    color: var(--muted);
+    flex-shrink: 0;
+}
+
+.review-text {
+    font-size: 13px;
+    color: var(--text);
+}
+
+.review-meta {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* -----------------------------------------------------------
+   RESPONSIVE MEDIA QUERIES
+----------------------------------------------------------- */
+
+/* Tablet & Smaller (Max 991px) */
+@media (max-width: 991px) {
+    .profile-body-row {
+        flex-direction: column;
+    }
+
+    .profile-left-col,
+    .profile-right-col {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    /* Header adjustments */
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+        align-items: center;
+    }
+
+    .header-left {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    /* Status badge on its own line */
+    .status-badge {
+        width: 100%;
+        max-width: 280px;
+    }
+}
+
+/* Mobile (Max 576px) */
+@media (max-width: 576px) {
+    .profile-page {
+        padding-top: 16px;
+        padding-bottom: 20px;
+    }
+
+    .profile-container {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+
+    .profile-body-row {
+        padding: 16px;
+        gap: 16px;
+    }
+
+    .profile-header {
+        padding: 18px;
+    }
+
+    .profile-avatar {
+        width: 90px;
+        height: 90px;
+    }
+
+    .profile-name {
+        font-size: 18px;
+    }
+
+    /* Adjust stats cards to Grid on mobile for better space usage? */
+    .stats-box {
+        /* Keep flex but maybe wrap? */
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+}
+
+/* Service Pricing Items */
+.pricing-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: var(--bg);
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.pricing-info {
+    flex: 1;
+    min-width: 0;
+    /* Important for flex child truncation/wrapping */
+}
+
+.pricing-label {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 2px;
+}
+
+.pricing-value {
+    font-weight: 700;
+    color: var(--text);
+    font-size: 16px;
+    white-space: normal;
+    /* Allow wrapping */
+    word-wrap: break-word;
+}
+
+@media (max-width: 576px) {
+    .profile-card {
+        padding: 16px;
+        /* Reduce card padding */
+    }
+
+    .pricing-item {
+        padding: 10px;
+        /* Compress item padding */
+        gap: 10px;
+    }
+
+    .pricing-value {
+        font-size: 14px;
+        /* Smaller font on mobile */
+    }
+
+    /* Make the header text smaller too */
+    .profile-heading {
+        font-size: 15px;
+    }
+}
