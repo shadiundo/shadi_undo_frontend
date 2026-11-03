@@ -661,7 +661,29 @@ export default function BookAppointment() {
                   </button>
                 </div>
 
-                {bookingError && <div style={styles.error}>{bookingError}</div>}
+                {bookingError && (
+                  <div style={styles.error}>
+                    <div>{bookingError}</div>
+                    {bookingError.toLowerCase().includes("wallet") && (
+                      <button
+                        type="button"
+                        onClick={() => navigate("/user-profile")}
+                        style={{
+                          marginTop: 10,
+                          background: "#CAAA93",
+                          color: "#03182A",
+                          border: "none",
+                          borderRadius: 8,
+                          padding: "8px 16px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Go to Wallet & Add Money →
+                      </button>
+                    )}
+                  </div>
+                )}
                 {bookingSuccess && <div style={styles.success}>Booked successfully — {bookingSuccess?.appointment?._id ?? bookingSuccess?.appointment?.id ?? bookingSuccess?.id ?? "ID not returned"}</div>}
               </div>
             </div>

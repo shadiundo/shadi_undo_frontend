@@ -16,7 +16,7 @@ export function WalletProvider({ children }) {
 
     try {
       const res = await fetch(
-        import.meta.env.VITE_API_URL + "/api/profile/me",
+        (import.meta.env.VITE_API_URL || "https://shadi-undo-backend.onrender.com").replace(/\/+$/, "") + "/api/profile/me",
         {
           headers: {
             Authorization: `Bearer ${token}`,

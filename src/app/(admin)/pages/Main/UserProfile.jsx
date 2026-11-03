@@ -52,7 +52,7 @@ const statusColors = (status) => {
 };
 
 
-const RENDER_API = import.meta.env.VITE_API_URL || ""; // e.g. "https://shadi-undo-backend.onrender.com"
+const RENDER_API = import.meta.env.VITE_API_URL || "https://shadi-undo-backend.onrender.com"; // e.g. "https://shadi-undo-backend.onrender.com"
 function buildUrl(path) {
   if (!path || typeof path !== "string") return path;
   if (/^https?:\/\//i.test(path)) return path;
@@ -932,7 +932,17 @@ export default function UserProfile({ apiBase = "/api" }) {
                 </div>
               </div>
             ) : (
-              <SmallMuted style={{ marginTop: 12 }}>No wallet found.</SmallMuted>
+              <div style={{ marginTop: 12 }}>
+                <SmallMuted>No wallet found.</SmallMuted>
+                <div style={{ marginTop: 8 }}>
+                  <PrimaryBtn
+                    style={{ padding: "6px 14px", fontSize: 13, fontWeight: 700 }}
+                    onClick={() => setShowTopup(true)}
+                  >
+                    Add Money
+                  </PrimaryBtn>
+                </div>
+              </div>
             )}
           </WalletPanel>
 
@@ -1059,6 +1069,14 @@ export default function UserProfile({ apiBase = "/api" }) {
                     <EmptyCenter>
                       <EmptyImg src={""} alt="" />
                       <Muted>No wallet found.</Muted>
+                      <div style={{ marginTop: 14 }}>
+                        <PrimaryBtn
+                          style={{ padding: "10px 18px", fontWeight: 700 }}
+                          onClick={() => setShowTopup(true)}
+                        >
+                          Add Money / Top up Wallet
+                        </PrimaryBtn>
+                      </div>
                     </EmptyCenter>
                   )}
                 </Section>
