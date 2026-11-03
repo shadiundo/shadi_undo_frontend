@@ -76,6 +76,17 @@ export default function BookAppointment() {
   }, [token]);
   const isRegistered = Boolean(token);
 
+  const userPayload = useMemo(() => {
+    if (!token) return null;
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      return JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    } catch {
+      return null;
+    }
+  }, [token]);
+
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(null);
   const [bookingError, setBookingError] = useState(null);
@@ -556,7 +567,38 @@ export default function BookAppointment() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 {isRegistered ? (
                   <>
-                    <div style={{ fontSize: 18, fontWeight: 900 }}>You're signed in</div>
+                    <div style={{ background: "#f8f9fa", border: "1px solid #e9ecef", borderRadius: 10, padding: "12px 16px", marginBottom: 14 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                      <div>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: "#141c2c" }}>
+                          ✓ You are logged in
+                        </div>
+                        <div style={{ fontSize: 13, color: "#6c757d" }}>
+                          {userPayload?.email ? `Account: ${userPayload.email}` : "Active login session"}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          localStorage.removeItem("token");
+                          localStorage.removeItem("professional");
+                          setToken(null);
+                        }}
+                        style={{
+                          background: "#fff",
+                          border: "1px solid #dc3545",
+                          color: "#dc3545",
+                          borderRadius: 6,
+                          padding: "6px 12px",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Logout / Switch Account
+                      </button>
+                    </div>
+                  </div>
                     <div style={styles.muted}>Proceed to confirm your appointment — you may edit date/time, add notes and choose who this appointment is for.</div>
                   </>
                 ) : (
