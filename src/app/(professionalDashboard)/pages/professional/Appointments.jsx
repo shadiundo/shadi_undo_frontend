@@ -119,6 +119,7 @@ function RecentAppointments() {
   const [activeCall, setActiveCallRaw] = useState(null);
   const activeCallRef = useRef(null);
   const jitsiRef = useRef(null);
+  const proUser = useMemo(() => ({ name: "Professional" }), []);
 
   // 🔌 Socket listeners for User actions (Moved here to avoid ReferenceError)
   useEffect(() => {
@@ -1386,20 +1387,23 @@ function RecentAppointments() {
           <div style={{
             width: "100%",
             height: isSM ? "480px" : isMD ? "500px" : isLG ? "450px" : "500px",
+            minHeight: "450px",
             borderRadius: "clamp(8px, 1.5vw, 12px)",
             overflow: "hidden",
+            background: "#111827",
             border: "1px solid rgba(0,0,0,0.08)",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+            position: "relative"
           }}>
             <DailyCall
               ref={jitsiRef}
               roomName={activeCall.roomName}
               token={activeCall.token || activeCall.jwt}
               mode="video"
-              user={{ name: "Professional" }}
+              user={proUser}
               headerText="Privileged and Confidential"
               logoUrl={null}
-              height="100%"
+              height={isSM ? "480px" : isMD ? "500px" : isLG ? "450px" : "500px"}
               autoJoin={true}
               onParticipantsUpdate={(count, participants) => handleParticipantsUpdate(count, participants)}
               onBothJoined={handleBothJoined}

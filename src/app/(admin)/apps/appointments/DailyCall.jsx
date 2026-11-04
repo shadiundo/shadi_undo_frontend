@@ -15,19 +15,22 @@ const DailyCall = forwardRef(
       roomName,
       token,
       user = { name: "User" },
-      height = "72vh",
+      height = "500px",
       logoUrl,
       headerText,
       autoJoin = false,
       onJoined,
-      onLeft
-    }
-    ,
+      onLeft,
+      onCallEnd,
+      onConferenceFailed,
+      onParticipantsUpdate,
+      onBothJoined
+    },
     ref
   ) => {
-    const componentId = useRef(Date.now()).current;
     const containerRef = useRef(null);
     const dailyRef = useRef(null);
+    const joinedRoomRef = useRef(null);
 
     const [callState, setCallState] = useState("idle");
     const [error, setError] = useState(null);
@@ -41,7 +44,7 @@ const DailyCall = forwardRef(
       return mod.default;
     };
 
-    const cleanup = async () => {
+    const destroyExistingFrame = async () => {
       const activeFrame = dailyRef.current || window.__DAILY_IFRAME__;
       if (activeFrame) {
         try {
@@ -56,11 +59,20 @@ const DailyCall = forwardRef(
         window.__DAILY_IFRAME__ = null;
       }
 
+      if (containerRef.current) {
+        containerRef.current.innerHTML = "";
+      }
+
       document.querySelectorAll("iframe").forEach((i) => {
         if (i.src?.includes("daily.co")) i.remove();
       });
+    };
 
+    const cleanup = async () => {
+      await destroyExistingFrame();
+      joinedRoomRef.current = null;
       setCallState("idle");
+      setShowInterface(false);
       setBothJoined(false);
       setError(null);
     };
@@ -77,6 +89,12 @@ const DailyCall = forwardRef(
         return;
       }
 
+      // If already connected to THIS room and token, don't re-create frame
+      if (dailyRef.current && joinedRoomRef.current === `${roomName}_${token}`) {
+        return;
+      }
+
+      joinedRoomRef.current = `${roomName}_${token}`;
       setCallState("joining");
       setShowInterface(true);
 
@@ -87,7 +105,7 @@ const DailyCall = forwardRef(
 
         // Ensure containerRef is attached to the DOM
         let retries = 0;
-        while (!containerRef.current && retries < 10) {
+        while (!containerRef.current && retries < 15) {
           await new Promise((r) => setTimeout(r, 50));
           retries++;
         }
@@ -96,21 +114,22 @@ const DailyCall = forwardRef(
           throw new Error("Video container element not found");
         }
 
-        await cleanup();
+        await destroyExistingFrame();
 
         const frame = Daily.createFrame(containerRef.current, {
           iframeStyle: {
             width: "100%",
             height: "100%",
+            minHeight: "450px",
             border: "0",
-            borderRadius: "8px",
+            borderRadius: "10px",
             position: "absolute",
             top: 0,
             left: 0
           },
           showLeaveButton: true,
           showFullscreenButton: true,
-          activeSpeakerMode: false, // 👈 Force Grid View
+          activeSpeakerMode: false,
           dailyConfig: {
             experimentalChromeVideoMuteLightOff: true
           }
@@ -124,21 +143,49 @@ const DailyCall = forwardRef(
           if (onJoined) onJoined();
         });
 
-        frame.on("participant-joined", () => setBothJoined(true));
-        frame.on("participant-left", () => setBothJoined(false));
+        frame.on("participant-joined", () => {
+          setBothJoined(true);
+          if (onBothJoined) onBothJoined();
+          if (onParticipantsUpdate) {
+            try {
+              const count = Object.keys(frame.participants() || {}).length;
+              onParticipantsUpdate(count, frame.participants());
+            } catch { }
+          }
+        });
+
+        frame.on("participant-left", () => {
+          setBothJoined(false);
+          if (onParticipantsUpdate) {
+            try {
+              const count = Object.keys(frame.participants() || {}).length;
+              onParticipantsUpdate(count, frame.participants());
+            } catch { }
+          }
+        });
+
         frame.on("left-meeting", async () => {
+          joinedRoomRef.current = null;
           if (onLeft) onLeft();
+          if (onCallEnd) onCallEnd();
           setCallState("left");
           await cleanup();
         });
 
-        await frame.join({ url, token, userName: user.name });
+        frame.on("error", (e) => {
+          console.error("Daily frame error:", e);
+          if (onConferenceFailed) onConferenceFailed(e);
+        });
+
+        await frame.join({ url, token, userName: user?.name || "Participant" });
       } catch (err) {
         console.error("Daily joinRoom error:", err);
         setError(err.message || "Failed to join video call");
         setCallState("error");
+        joinedRoomRef.current = null;
+        if (onConferenceFailed) onConferenceFailed(err);
       }
-    }, [roomName, token, user.name]);
+    }, [roomName, token, user?.name, onJoined, onLeft, onCallEnd, onConferenceFailed, onBothJoined, onParticipantsUpdate]);
 
     useImperativeHandle(ref, () => ({
       leave: cleanup,
@@ -147,128 +194,148 @@ const DailyCall = forwardRef(
 
     useEffect(() => {
       if (autoJoin && roomName && token) {
-        const timer = setTimeout(() => {
-          joinRoom();
-        }, 300);
-        return () => clearTimeout(timer);
+        if (!dailyRef.current && joinedRoomRef.current !== `${roomName}_${token}`) {
+          const timer = setTimeout(() => {
+            joinRoom();
+          }, 200);
+          return () => clearTimeout(timer);
+        }
       }
     }, [autoJoin, roomName, token, joinRoom]);
 
+    const resolvedHeight = height && height !== "100%" ? height : "500px";
+
     return (
-      <div style={{ width: "100%", position: "relative" }}>
-        {headerText ? (
+      <div
+        style={{
+          width: "100%",
+          height: height || "500px",
+          minHeight: "450px",
+          position: "relative",
+          background: "#111827",
+          borderRadius: "12px",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column"
+        }}
+      >
+        {headerText && (
           <div
             style={{
               position: "absolute",
-              top: 9,
+              top: 10,
               left: "50%",
               transform: "translateX(-50%)",
-              zIndex: 10,
-              fontSize: 16,
-              fontWeight: 900,
+              zIndex: 25,
+              fontSize: 13,
+              fontWeight: 800,
               letterSpacing: "0.12em",
               textTransform: "uppercase",
               color: "#ffffff",
-              opacity: 0.75,
+              opacity: 0.85,
+              textShadow: "0 1px 4px rgba(0,0,0,0.8)",
               pointerEvents: "none",
             }}
           >
             {headerText}
           </div>
-        ) : (
-          logoUrl && (
-            <img
-              src={logoUrl}
-              alt="logo"
+        )}
+
+        {logoUrl && (
+          <img
+            src={logoUrl}
+            alt="logo"
+            style={{
+              position: "absolute",
+              top: 12,
+              left: 16,
+              width: 50,
+              zIndex: 25
+            }}
+          />
+        )}
+
+        {callState === "joining" && (
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 20,
+              color: "#ffffff",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 12,
+              pointerEvents: "none"
+            }}
+          >
+            <div
               style={{
-                position: "absolute",
-                top: 50,
-                left: 16,
-                width: 60,
-                zIndex: 10
+                width: 36,
+                height: 36,
+                border: "3px solid rgba(255,255,255,0.25)",
+                borderTopColor: "#CAAA93",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite"
               }}
             />
-          )
+            <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "0.04em", color: "#E5E7EB" }}>
+              Connecting to secure video call...
+            </span>
+          </div>
         )}
 
         {!showInterface && callState === "idle" && (
           <div
             style={{
               width: "100%",
-              height,
-              background: "linear-gradient(135deg, #0f766e, #dc2626)",
-
-              borderRadius: 12,
+              height: "100%",
+              minHeight: "450px",
+              background: "linear-gradient(135deg, #134e4a, #7f1d1d)",
+              boxShadow: "inset 0 0 120px rgba(0,0,0,0.25)",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              color: "white"
+              color: "white",
+              textAlign: "center",
+              padding: 24,
+              flex: 1
             }}
           >
-            <div
-              style={{
-                width: "100%",
-                height,
-                background: "linear-gradient(135deg, #134e4a, #7f1d1d)",
-                boxShadow: "inset 0 0 120px rgba(0,0,0,0.25)",
-                borderRadius: 12,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-                textAlign: "center",
-              }}
-            >
-              <div style={{ marginBottom: 20 }}>
-                <img
-                  src={logo}
-                  alt="ShaadiUndo logo"
-                  style={{
-                    width: "clamp(90px, 18vw, 160px)",
-                    height: "auto",
-                    filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.35))",
-                  }}
-                />
-              </div>
-
-              <h2 style={{ marginBottom: 8, color: "#ffffff" }}>Ready to join?</h2>
-              <p style={{ opacity: 0.75, marginBottom: 24 }}>{roomName}</p>
-
-              <button
-                onClick={joinRoom}
+            <div style={{ marginBottom: 20 }}>
+              <img
+                src={logo}
+                alt="ShaadiUndo logo"
                 style={{
-                  padding: "14px 40px",
-                  fontSize: 18,
-                  fontWeight: 700,
-                  background: "white",
-                  color: "#7f1d1d",
-                  borderRadius: 10,
-                  cursor: "pointer",
+                  width: "clamp(90px, 18vw, 150px)",
+                  height: "auto",
+                  filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.35))",
                 }}
-              >
-                Join Call
-              </button>
+              />
             </div>
 
-            {/* <h2 style={{ marginTop: 20 }}>Ready to join?</h2>
-            <p style={{ opacity: 0.7, marginBottom: 20 }}>{roomName}</p>
+            <h2 style={{ marginBottom: 8, color: "#ffffff", fontSize: "22px", fontWeight: 700 }}>Ready to join?</h2>
+            <p style={{ opacity: 0.75, marginBottom: 24, fontSize: "14px" }}>{roomName}</p>
 
             <button
               onClick={joinRoom}
               style={{
-                padding: "14px 40px",
-                fontSize: 18,
+                padding: "12px 36px",
+                fontSize: 16,
                 fontWeight: 700,
-                background: "white",
-                color: "#667eea",
+                background: "#ffffff",
+                color: "#7f1d1d",
                 borderRadius: 10,
-                cursor: "pointer"
+                border: "none",
+                cursor: "pointer",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.2)"
               }}
             >
               Join Call
-            </button> */}
+            </button>
           </div>
         )}
 
@@ -278,30 +345,30 @@ const DailyCall = forwardRef(
               background: "#ffeded",
               color: "#c53030",
               padding: 12,
-              marginTop: 10,
-              borderRadius: 8
+              margin: 12,
+              borderRadius: 8,
+              zIndex: 30
             }}
           >
             ⚠ {error}
           </div>
         )}
 
-        {/* Video Frame Container - Always in DOM so containerRef.current is never null */}
+        {/* Video Frame Container - Always in DOM with explicit minHeight & flex */}
         <div
           ref={containerRef}
           style={{
             width: "100%",
-            height,
-            background: "#111",
+            height: "100%",
+            minHeight: "450px",
+            flex: 1,
+            background: "#111827",
             borderRadius: 10,
             overflow: "hidden",
-            marginTop: 10,
             position: "relative",
             display: (callState === "joining" || callState === "joined" || showInterface) ? "block" : "none"
           }}
         />
-
-
       </div>
     );
   }
