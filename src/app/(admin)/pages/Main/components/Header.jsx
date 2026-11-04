@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import logo from "@/assets/images/shadiundo.png";
-import { FaWallet } from "react-icons/fa";
+import { FaWallet, FaUserCircle } from "react-icons/fa";
 
 /* Colors */
 const ACCENT = "#CAAA93";
@@ -93,15 +93,39 @@ const Nav = styled.nav`
 
 
 const StyledLink = styled(NavLink)`
-  text-decoration: none;
+  text-decoration: none !important;
   color: ${TEXT};
   font-size: 1.05rem;
   padding-bottom: 4px;
   font-weight: 700;
   position: relative;
   transition: color 0.22s ease, transform 0.18s ease;
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 
-  &.active { color: ${DARK}; }
+  &::selection {
+    background: transparent;
+  }
+
+  &:focus,
+  &:focus-visible,
+  &:active,
+  &:visited {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  &.active {
+    color: ${DARK};
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
 
   &.active::after {
     content: "";
@@ -118,6 +142,9 @@ const StyledLink = styled(NavLink)`
   &:hover {
     color: ${DARK};
     transform: translateY(-1px);
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 `;
 
@@ -420,16 +447,18 @@ useEffect(() => {
 
           <Button to="/lawyer-list">Book Consultation</Button>
 
-        <WalletButton to="/user-profile">
+        <WalletButton to="/user-profile" title="My Profile & Wallet">
   <FaWallet size={20} style={{ color: "#D3382F" }} />
   <WalletBalance>
-    {walletBalance == null
-      ? "—"
-      : new Intl.NumberFormat("en-IN", {
-          style: "currency",
-          currency: "INR",
-          maximumFractionDigits: 0,
-        }).format(walletBalance)}
+    {walletBalance == null ? (
+      <FaUserCircle size={19} style={{ color: "#141C2C" }} />
+    ) : (
+      new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
+        maximumFractionDigits: 0,
+      }).format(walletBalance)
+    )}
   </WalletBalance>
 </WalletButton>
 

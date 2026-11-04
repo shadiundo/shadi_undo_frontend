@@ -31,7 +31,7 @@ export default function BookAppointment() {
   const location = useLocation();
   const navigate = useNavigate();
   const bookingDraft = location.state?.bookingDraft ?? null;
-  const apiBase = "https://shadi-undo-backend.onrender.com";
+  const apiBase = import.meta.env.VITE_API_URL || (typeof window !== "undefined" && window.location.hostname === "localhost" ? "http://localhost:5000" : "https://shadi-undo-backend.onrender.com");
 
   const [professional, setProfessional] = useState(bookingDraft?.professional ?? null);
   const [loadingProfile, setLoadingProfile] = useState(Boolean(!bookingDraft?.professional && bookingDraft?.professionalId));
@@ -377,39 +377,191 @@ export default function BookAppointment() {
   }, [selectedStartTime, bookingDraft]);
 
   const styles = {
-    page: { minHeight: "100vh", fontFamily: "Raleway, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial", background: "#FBF7F4", color: "#2e241d" },
+    page: {
+      minHeight: "100vh",
+      fontFamily: "Raleway, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial",
+      background: "#FBF7F4",
+      color: "#1f2937",
+    },
     topHeader: {
-      height: 140,
+      minHeight: 88,
       background: `linear-gradient(90deg, ${PRIMARY} 0%, #e6c9ad 100%)`,
       display: "flex",
       alignItems: "center",
-      padding: "0 24px",
+      padding: "16px 24px",
       color: "#fff",
       boxSizing: "border-box",
     },
-    cardLeft: { background: "#fff", padding: 18, borderRadius: 12, boxShadow: "0 10px 28px rgba(15,12,11,0.06)", borderTop: `6px solid ${PRIMARY}` },
-    avatar: { width: 84, height: 84, borderRadius: "50%", objectFit: "cover", marginRight: 12, boxShadow: `0 6px 18px rgba(186,141,108,0.18)` },
-    bookingHeader: { background: "#fff", borderRadius: 30, padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 8px 20px rgba(15,12,11,0.04)", gap: 8 },
-    bookingHeaderLeft: { fontWeight: 900, fontSize: 20 },
-    bookingHeaderControls: { display: "flex", gap: 10, alignItems: "center" },
-    formCard: { background: "#fff", padding: 20, borderRadius: 12, boxShadow: "0 10px 28px rgba(15,12,11,0.06)" },
-    input: { width: "100%", padding: "10px 12px", border: "none", borderBottom: "2px solid rgba(0,0,0,0.12)", outline: "none", fontSize: 15, marginBottom: 12, background: "transparent" },
-    textarea: { width: "100%", minHeight: 110, padding: 12, borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)", resize: "vertical", marginTop: 8 },
-    pill: { display: "inline-block", padding: "8px 14px", borderRadius: 14, background: "#ececec", marginRight: 8, cursor: "pointer", border: "none" },
-    selectedPill: { background: PRIMARY, color: "#fff" },
-    smallSelect: { padding: "8px 14px", borderRadius: 8, border: "1px solid #ddd", background: "#fff", cursor: "pointer" },
-    primaryBtn: { background: PRIMARY, color: "#fff", border: "none", padding: "12px 20px", borderRadius: 28, fontWeight: 800, cursor: "pointer" },
-    // use theme color for GET OTP button
-    otpBtn: { background: PRIMARY, color: "#fff", border: "none", padding: "10px 14px", borderRadius: 8, fontWeight: 800, cursor: "pointer" },
-    verifyBtn: { background: "#49b7ff", color: "#fff", border: "none", padding: "14px 28px", borderRadius: 999, fontWeight: 800, cursor: "pointer" },
-    muted: { color: "rgba(46,36,32,0.6)" },
-    error: { color: "crimson", marginTop: 8 },
-    success: { color: "green", marginTop: 8 },
-    leftStepBox: { background: "#FBF7F4", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12, padding: 20, minHeight: 180, fontWeight: 900, fontSize: 26, borderLeft: `6px solid ${PRIMARY}` },
-    profileMeta: { display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" },
-    profileName: { fontSize: 20, fontWeight: 900, color: PRIMARY, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
-    profileRole: { color: "rgba(46,36,32,0.6)" },
-    profileStats: { marginTop: 12, color: "rgba(46,36,32,0.75)" },
+    cardLeft: {
+      background: "#fff",
+      padding: 22,
+      borderRadius: 14,
+      boxShadow: "0 8px 24px rgba(15,12,11,0.06)",
+      borderTop: `5px solid ${PRIMARY}`,
+      boxSizing: "border-box",
+    },
+    avatar: {
+      width: 68,
+      height: 68,
+      borderRadius: "50%",
+      objectFit: "cover",
+      boxShadow: "0 4px 14px rgba(186,141,108,0.2)",
+    },
+    bookingHeader: {
+      background: "#fff",
+      borderRadius: 14,
+      padding: "14px 20px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      boxShadow: "0 6px 20px rgba(15,12,11,0.04)",
+      gap: 12,
+      flexWrap: "wrap",
+    },
+    bookingHeaderLeft: {
+      fontWeight: 800,
+      fontSize: 18,
+      color: "#1f2937",
+    },
+    bookingHeaderControls: {
+      display: "flex",
+      gap: 10,
+      alignItems: "center",
+      flexWrap: "wrap",
+    },
+    formCard: {
+      background: "#fff",
+      padding: "24px 26px",
+      borderRadius: 14,
+      boxShadow: "0 8px 24px rgba(15,12,11,0.06)",
+      boxSizing: "border-box",
+    },
+    input: {
+      width: "100%",
+      padding: "12px 14px",
+      border: "1.5px solid #d1d5db",
+      borderRadius: 8,
+      outline: "none",
+      fontSize: 15,
+      marginBottom: 14,
+      background: "#ffffff",
+      backgroundColor: "#ffffff",
+      color: "#111827",
+      boxSizing: "border-box",
+      fontFamily: "inherit",
+    },
+    textarea: {
+      width: "100%",
+      minHeight: 100,
+      padding: "12px 14px",
+      borderRadius: 8,
+      border: "1.5px solid #d1d5db",
+      resize: "vertical",
+      marginTop: 8,
+      background: "#ffffff",
+      backgroundColor: "#ffffff",
+      color: "#111827",
+      fontSize: 15,
+      boxSizing: "border-box",
+      fontFamily: "inherit",
+    },
+    pill: {
+      display: "inline-block",
+      padding: "8px 16px",
+      borderRadius: 20,
+      background: "#f3f4f6",
+      color: "#374151",
+      fontWeight: 600,
+      fontSize: 14,
+      cursor: "pointer",
+      border: "1px solid #e5e7eb",
+      transition: "all 0.18s ease",
+    },
+    selectedPill: {
+      background: PRIMARY,
+      color: "#ffffff",
+      borderColor: PRIMARY,
+      fontWeight: 700,
+      boxShadow: "0 2px 8px rgba(202,170,147,0.35)",
+    },
+    smallSelect: {
+      padding: "8px 12px",
+      borderRadius: 8,
+      border: "1.5px solid #d1d5db",
+      background: "#ffffff",
+      color: "#111827",
+      cursor: "pointer",
+      fontSize: 14,
+      outline: "none",
+    },
+    primaryBtn: {
+      background: PRIMARY,
+      color: "#ffffff",
+      border: "none",
+      padding: "12px 28px",
+      borderRadius: 28,
+      fontWeight: 800,
+      fontSize: 16,
+      cursor: "pointer",
+      boxShadow: "0 4px 14px rgba(202,170,147,0.35)",
+      transition: "all 0.2s ease",
+    },
+    otpBtn: {
+      background: PRIMARY,
+      color: "#ffffff",
+      border: "none",
+      padding: "11px 18px",
+      borderRadius: 8,
+      fontWeight: 800,
+      fontSize: 14,
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+    },
+    verifyBtn: {
+      background: "#0284c7",
+      color: "#ffffff",
+      border: "none",
+      padding: "12px 24px",
+      borderRadius: 8,
+      fontWeight: 800,
+      fontSize: 14,
+      cursor: "pointer",
+    },
+    muted: { color: "#6b7280" },
+    error: {
+      color: "#dc2626",
+      background: "#fef2f2",
+      border: "1px solid #fecaca",
+      padding: "10px 14px",
+      borderRadius: 8,
+      marginTop: 10,
+      fontSize: 14,
+      fontWeight: 600,
+    },
+    success: {
+      color: "#16a34a",
+      background: "#f0fdf4",
+      border: "1px solid #bbf7d0",
+      padding: "10px 14px",
+      borderRadius: 8,
+      marginTop: 10,
+      fontSize: 14,
+      fontWeight: 600,
+    },
+    profileMeta: {
+      display: "flex",
+      gap: 12,
+      alignItems: "center",
+      justifyContent: "space-between",
+      flexWrap: "wrap",
+    },
+    profileName: {
+      fontSize: 18,
+      fontWeight: 800,
+      color: "#1f2937",
+    },
+    profileRole: { color: "#6b7280", fontSize: 13, marginTop: 2 },
+    profileStats: { marginTop: 8, color: "#6b7280", fontSize: 13 },
   };
 
   return (
@@ -417,57 +569,99 @@ export default function BookAppointment() {
       <style>{`
         .bu-container {
           width: 100%;
-          box-sizing: border-box;
-          padding: 16px;
+          max-width: 1280px;
           margin: 0 auto;
-          margin-left:-0.5rem;
-          max-width: 1200px;
+          box-sizing: border-box;
+          padding: 24px 20px;
           display: grid;
-          grid-template-columns: 1fr;
-          gap: 18px;
+          grid-template-columns: 280px 1fr 340px;
+          gap: 24px;
           align-items: start;
         }
-        @media (min-width: 1024px) {
+        @media (max-width: 1100px) {
           .bu-container {
-            grid-template-columns: 320px 1fr 360px;
-            gap: 24px;
-            padding: 24px;
-            max-width: 1200px;
+            grid-template-columns: 1fr 340px;
+            padding: 20px 16px;
+          }
+          .bu-cardLeft {
+            grid-column: 1 / -1;
           }
         }
-        @media (min-width: 768px) and (max-width: 1023px) {
+        @media (max-width: 768px) {
           .bu-container {
-            grid-template-columns: 1fr 360px;
-            gap: 20px;
-            padding: 20px;
-            max-width: 1000px;
+            grid-template-columns: 1fr;
+            padding: 14px;
+            gap: 16px;
+          }
+          .bu-topHeader {
+            padding: 12px 16px !important;
+          }
+          .bu-bookingHeader {
+            padding: 12px 14px !important;
+            border-radius: 12px !important;
+          }
+          .bu-bookingHeaderControls {
+            width: 100%;
+            justify-content: space-between;
+          }
+          .bu-bookingHeaderControls > div {
+            flex: 1 1 30% !important;
+            max-width: 100% !important;
+            width: auto !important;
           }
         }
-        .bu-bookingHeaderControls > * { min-width: 0; }
-        .bu-bookingHeaderControls input[type="date"],
-        .bu-bookingHeaderControls input[type="time"] {
-          box-sizing: border-box;
+        input,
+        textarea,
+        select {
+          color: #111827 !important;
+          background-color: #ffffff !important;
+          -webkit-text-fill-color: #111827 !important;
+          font-family: inherit;
+        }
+        input::placeholder,
+        textarea::placeholder {
+          color: #9ca3af !important;
+          -webkit-text-fill-color: #9ca3af !important;
+          opacity: 1 !important;
+        }
+        input:focus,
+        textarea:focus,
+        select:focus {
+          border-color: ${PRIMARY} !important;
+          box-shadow: 0 0 0 3px rgba(202,170,147,0.25) !important;
+          outline: none !important;
         }
         .bu-cardLeft { width: 100%; display: flex; flex-direction: column; gap: 12px; }
         .bu-summary { text-align: left; }
         .bu-pills { display: flex; flex-wrap: wrap; gap: 8px; }
-        @media (max-width: 480px) {
-          .bu-topHeader { height: 110px !important; padding: 10px !important; }
-          .bu-leftStepBox { min-height: 140px !important; font-size: 22px !important; }
-          .bu-bookingHeader { padding: 12px !important; border-radius: 18px !important; }
+        .auth-tabs { display: flex; gap: 10px; margin-top: 14px; margin-bottom: 14px; }
+        .auth-tab {
+          padding: 9px 22px;
+          border-radius: 999px;
+          cursor: pointer;
+          border: 1.5px solid #d1d5db;
+          background: #ffffff;
+          color: #374151 !important;
+          font-weight: 700;
+          font-size: 14px;
+          transition: all 0.2s ease;
         }
-        @media (max-width: 767px) {
-          .bu-bookingHeaderControls { flex-wrap: wrap; gap: 8px; }
-          .bu-bookingHeaderControls input[type="date"],
-          .bu-bookingHeaderControls input[type="time"] {
-            width: 100% !important;
-          }
-          .bu-leftColumnInline { display: none; }
+        .auth-tab:hover {
+          background: #f9fafb;
+          border-color: #9ca3af;
         }
-        .auth-tabs { display:flex; gap:8px; margin-top:12px; }
-        .auth-tab { padding:8px 14px; border-radius:999px; cursor:pointer; border:1px solid rgba(0,0,0,0.06); background:#fff; font-weight:700; }
-        .auth-tab.active { background: ${PRIMARY}; color:#fff; border-color: ${PRIMARY}; }
-        .profile-card-accent { background: linear-gradient(90deg, rgba(186,141,108,0.06), rgba(186,141,108,0.02)); padding:12px; border-radius:10px; }
+        .auth-tab.active {
+          background: ${PRIMARY} !important;
+          color: #ffffff !important;
+          border-color: ${PRIMARY} !important;
+          box-shadow: 0 2px 8px rgba(202,170,147,0.35);
+        }
+        .profile-card-accent {
+          background: #fdf8f4;
+          border: 1px solid #f3e8df;
+          padding: 14px;
+          border-radius: 10px;
+        }
       `}</style>
 
       <div className="bu-topHeader" style={styles.topHeader}>
@@ -477,15 +671,10 @@ export default function BookAppointment() {
             <div style={{ fontWeight: 600 }}>Find the Help You Need—Now</div>
           </div>
           <div className="search-wrap" style={{ display: "flex", gap: 12, alignItems: "center", flex: 1, justifyContent: "flex-end", flexWrap: "wrap" }}>
-            <div style={{ flex: "0 1 420px", minWidth: 180, background: "rgba(255,255,255,0.9)", padding: "8px 12px", borderRadius: 10, color: "#333" }}>
-              <input placeholder="Counsellors Near by.." style={{ border: "none", outline: "none", width: "100%", background: "transparent" }} />
-            </div>
-            <div style={{ flex: "0 1 420px", minWidth: 180, background: "rgba(255,255,255,0.9)", padding: "8px 12px", borderRadius: 10, color: "#333" }}>
-              <input placeholder="Find Counsellors..." style={{ border: "none", outline: "none", width: "100%", background: "transparent" }} />
-            </div>
             <div style={{ textAlign: "center", marginLeft: 8 }}>
-              <div style={{ background: "#DDEFFB", display: "inline-block", padding: 8, borderRadius: 999 }}>✓</div>
-              <div style={{ fontSize: 12 }}>Verified</div>
+              <div style={{ background: "#DDEFFB", display: "inline-block", padding: "6px 12px", borderRadius: 999, fontWeight: 700, fontSize: 13, color: "#0369a1" }}>
+                ✓ Verified Professionals
+              </div>
             </div>
           </div>
         </div>
@@ -512,14 +701,13 @@ export default function BookAppointment() {
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontWeight: 800 }}>{professional?.location?.city ?? professional?.location?.address ?? "Unknown location"}</div>
-                    <div style={styles.profileStats}>10+ yrs</div>
-                    <div style={styles.profileStats}>1000+ sessions</div>
+                    <div style={styles.profileStats}>10+ yrs · 1000+ sessions</div>
                   </div>
                 </div>
               </div>
 
-              <div className="profile-card-accent" style={{ marginTop: 12 }}>
-                <button onClick={() => navigate(`/profile/${professional?._id || professional?.id || bookingDraft?.professionalId}`)} style={{ ...styles.primaryBtn, width: "100%", padding: "12px 16px", borderRadius: 12 }}>
+              <div className="profile-card-accent" style={{ marginTop: 14 }}>
+                <button onClick={() => navigate(`/profile/${professional?._id || professional?.id || bookingDraft?.professionalId}`)} style={{ ...styles.primaryBtn, width: "100%", padding: "10px 16px", borderRadius: 10, fontSize: 14 }}>
                   View Profile
                 </button>
               </div>
@@ -529,9 +717,9 @@ export default function BookAppointment() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div className="bu-bookingHeader" style={styles.bookingHeader}>
-            <div style={styles.bookingHeaderLeft}>Booking Confirmation :</div>
+            <div style={styles.bookingHeaderLeft}>Consultation Time:</div>
             <div className="bu-bookingHeaderControls" style={{ ...styles.bookingHeaderControls, alignItems: "center" }}>
-              <div style={{ width: 160, maxWidth: "40%" }}>
+              <div style={{ minWidth: 150 }}>
                 <input
                   type="date"
                   value={selectedDate}
@@ -539,7 +727,7 @@ export default function BookAppointment() {
                   style={{ ...styles.smallSelect, width: "100%" }}
                 />
               </div>
-              <div style={{ width: 120, maxWidth: "30%" }}>
+              <div style={{ minWidth: 100 }}>
                 <input
                   type="time"
                   value={selectedStartTime}
@@ -547,7 +735,7 @@ export default function BookAppointment() {
                   style={{ ...styles.smallSelect, width: "100%" }}
                 />
               </div>
-              <div style={{ width: 120, maxWidth: "30%" }}>
+              <div style={{ minWidth: 100 }}>
                 <input
                   type="time"
                   value={selectedEndTime}
@@ -559,175 +747,378 @@ export default function BookAppointment() {
           </div>
 
           <div style={styles.formCard}>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <div style={{ width: 200, flexShrink: 0 }} className="bu-leftColumnInline">
-                <div className="bu-leftStepBox" style={styles.leftStepBox}>Step - 2</div>
+            <div style={{ width: "100%" }}>
+              {isRegistered ? (
+                <div style={{ background: "#f8f9fa", border: "1px solid #e9ecef", borderRadius: 10, padding: "14px 18px", marginBottom: 18 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+                    <div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "#141c2c" }}>
+                        ✓ You are signed in
+                      </div>
+                      <div style={{ fontSize: 13, color: "#6c757d", marginTop: 2 }}>
+                        {userPayload?.email ? `Account: ${userPayload.email}` : "Active login session"}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        localStorage.removeItem("token");
+                        localStorage.removeItem("professional");
+                        setToken(null);
+                      }}
+                      style={{
+                        background: "#fff",
+                        border: "1px solid #dc3545",
+                        color: "#dc3545",
+                        borderRadius: 6,
+                        padding: "6px 14px",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Logout / Switch Account
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ marginBottom: 18, borderBottom: "1px solid #f3f4f6", paddingBottom: 14 }}>
+                  <div style={{ display: "inline-block", background: "#fdf8f4", color: PRIMARY, border: `1px solid ${PRIMARY}`, padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+                    Step 1 of 2
+                  </div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#111827" }}>Register or Login to Book</div>
+                  <div style={{ color: "#6b7280", fontSize: 14, marginTop: 4 }}>
+                    New users can register below. If you already have an account, switch to Login.
+                  </div>
+                </div>
+              )}
+
+              <div style={{ marginTop: 14 }}>
+                <label style={{ display: "block", fontSize: 14, marginBottom: 8, fontWeight: 700, color: "#1f2937" }}>
+                  Appointment For :
+                </label>
+                <div className="bu-pills">
+                  {["Self", "Wife", "Husband", "Mother", "Father", "Other"].map((opt) => {
+                    const selected = appointmentFor === opt;
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setAppointmentFor(opt)}
+                        style={{ ...styles.pill, ...(selected ? styles.selectedPill : {}) }}
+                      >
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {isRegistered ? (
-                  <>
-                    <div style={{ background: "#f8f9fa", border: "1px solid #e9ecef", borderRadius: 10, padding: "12px 16px", marginBottom: 14 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-                      <div>
-                        <div style={{ fontSize: 16, fontWeight: 800, color: "#141c2c" }}>
-                          ✓ You are logged in
-                        </div>
-                        <div style={{ fontSize: 13, color: "#6c757d" }}>
-                          {userPayload?.email ? `Account: ${userPayload.email}` : "Active login session"}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          localStorage.removeItem("token");
-                          localStorage.removeItem("professional");
-                          setToken(null);
-                        }}
-                        style={{
-                          background: "#fff",
-                          border: "1px solid #dc3545",
-                          color: "#dc3545",
-                          borderRadius: 6,
-                          padding: "6px 12px",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Logout / Switch Account
-                      </button>
-                    </div>
-                  </div>
-                    <div style={styles.muted}>Proceed to confirm your appointment — you may edit date/time, add notes and choose who this appointment is for.</div>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>Step - 1 Register/Login</div>
-                    <div style={styles.muted}>Choose Register or Login. Register requires phone.</div>
-                  </>
-                )}
+              <div style={{ marginTop: 16 }}>
+                <label style={{ display: "block", fontSize: 14, marginBottom: 6, fontWeight: 700, color: "#1f2937" }}>
+                  Notes (Optional)
+                </label>
+                <textarea
+                  placeholder='E.g. "Initial consultation about mutual separation and custody."'
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  style={styles.textarea}
+                />
+              </div>
 
-                <div style={{ marginTop: 14 }}>
-                  <label style={{ display: "block", fontSize: 14, marginBottom: 8, fontWeight: 700 }}>Appointment For :</label>
-                  <div className="bu-pills">
-                    {["Self", "Wife", "Husband", "Mother", "Father", "Other"].map((opt) => {
-                      const selected = appointmentFor === opt;
-                      return (
-                        <button key={opt} onClick={() => setAppointmentFor(opt)} style={{ ...styles.pill, ...(selected ? styles.selectedPill : {}) }}>{opt}</button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 14 }}>
-                  <label style={{ display: "block", fontSize: 14, marginBottom: 8, fontWeight: 700 }}>Notes</label>
-                  <textarea placeholder='E.g. "Initial consultation about stress management."' value={notes} onChange={(e) => setNotes(e.target.value)} style={styles.textarea} />
-                </div>
-
-                {!isRegistered && (
-                  <div style={{ marginTop: 14 }}>
-                    <div className="auth-tabs">
-                      <div className={`auth-tab ${authTab === "register" ? "active" : ""}`} onClick={() => { setAuthTab("register"); setRegOtpError(null); }}>
-                        Register
-                      </div>
-                      <div className={`auth-tab ${authTab === "login" ? "active" : ""}`} onClick={() => { setAuthTab("login"); setLoginOtpError(null); }}>
-                        Login
-                      </div>
-                    </div>
-
-                    {authTab === "register" && (
-                      <div style={{ marginTop: 12 }}>
-                        <label style={{ display: "block", fontSize: 13, marginBottom: 6 }}>Name</label>
-                        <input value={regName} onChange={(e) => setRegName(e.target.value)} placeholder="Full name" style={styles.input} />
-
-                        <label style={{ display: "block", fontSize: 13, marginBottom: 6 }}>Email</label>
-                        <input value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="you@example.com" style={styles.input} />
-
-                        <label style={{ display: "block", fontSize: 13, marginBottom: 6 }}>Phone number (required)</label>
-                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                          <input value={regPhone} onChange={(e) => setRegPhone(e.target.value)} placeholder="+91 9876543210" style={{ ...styles.input, marginBottom: 0, flex: "1 1 220px" }} />
-                          <button onClick={() => requestRegisterOtp()} disabled={regOtpLoading} style={{ ...styles.otpBtn, whiteSpace: "nowrap", flex: "0 0 auto" }}>
-                            {regOtpLoading ? "Sending..." : (resendCooldownReg > 0 ? `Wait ${resendCooldownReg}s` : "GET OTP")}
-                          </button>
-                        </div>
-
-                        {regOtpSent && (
-                          <div style={{ marginTop: 12 }}>
-                            <label style={{ display: "block", fontSize: 13, marginBottom: 6 }}>Enter OTP</label>
-                            <input value={regOtp} onChange={(e) => setRegOtp(e.target.value)} placeholder="123456" style={styles.input} />
-                            <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
-                              <button onClick={verifyRegisterOtp} disabled={regOtpLoading} style={styles.verifyBtn}>{regOtpLoading ? "Verifying..." : "Verify"}</button>
-                              <button onClick={() => { setRegOtpSent(false); setRegOtp(""); setRegOtpError(null); }} style={{ padding: "12px 18px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", background: "#fff", cursor: "pointer" }}>Cancel</button>
-                              <button onClick={() => { if (resendCooldownReg === 0) { requestRegisterOtp({ forceResend: true }); } else { setRegOtpError(`Please wait ${resendCooldownReg}s`); } }} disabled={regOtpLoading} style={{ padding: "12px 18px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", background: "#fff", cursor: "pointer" }}>Resend OTP</button>
-                            </div>
-                          </div>
-                        )}
-
-                        {regOtpError && <div style={styles.error}>{regOtpError}</div>}
-                      </div>
-                    )}
-
-                    {authTab === "login" && (
-                      <div style={{ marginTop: 12 }}>
-                        <label style={{ display: "block", fontSize: 13, marginBottom: 6 }}>Email</label>
-                        <input value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder="you@example.com" style={styles.input} />
-
-                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                          <button onClick={() => requestLoginOtp()} disabled={loginOtpLoading} style={{ ...styles.otpBtn, whiteSpace: "nowrap", flex: "0 0 auto" }}>
-                            {loginOtpLoading ? "Sending..." : (resendCooldownLogin > 0 ? `Wait ${resendCooldownLogin}s` : "GET OTP")}
-                          </button>
-                        </div>
-
-                        {loginOtpSent && (
-                          <div style={{ marginTop: 12 }}>
-                            <label style={{ display: "block", fontSize: 13, marginBottom: 6 }}>Enter OTP</label>
-                            <input value={loginOtp} onChange={(e) => setLoginOtp(e.target.value)} placeholder="123456" style={styles.input} />
-                            <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
-                              <button onClick={verifyLoginOtp} disabled={loginOtpLoading} style={styles.verifyBtn}>{loginOtpLoading ? "Verifying..." : "Verify"}</button>
-                              <button onClick={() => { setLoginOtpSent(false); setLoginOtp(""); setLoginOtpError(null); }} style={{ padding: "12px 18px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", background: "#fff", cursor: "pointer" }}>Cancel</button>
-                              <button onClick={() => { if (resendCooldownLogin === 0) { requestLoginOtp(); } else { setLoginOtpError(`Please wait ${resendCooldownLogin}s`); } }} disabled={loginOtpLoading} style={{ padding: "12px 18px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", background: "#fff", cursor: "pointer" }}>Resend OTP</button>
-                            </div>
-                          </div>
-                        )}
-
-                        {loginOtpError && <div style={styles.error}>{loginOtpError}</div>}
-                      </div>
-                    )}
-                  </div>
-                )}
-
+              {!isRegistered && (
                 <div style={{ marginTop: 18 }}>
-                  <button onClick={handleConfirmBooking} disabled={bookingLoading} style={{ ...styles.primaryBtn, opacity: bookingLoading ? 0.8 : 1 }}>
-                    {bookingLoading ? "Booking..." : "Confirm Booking"}
-                  </button>
-                </div>
-
-                {bookingError && (
-                  <div style={styles.error}>
-                    <div>{bookingError}</div>
-                    {bookingError.toLowerCase().includes("wallet") && (
-                      <button
-                        type="button"
-                        onClick={() => navigate("/user-profile")}
-                        style={{
-                          marginTop: 10,
-                          background: "#CAAA93",
-                          color: "#03182A",
-                          border: "none",
-                          borderRadius: 8,
-                          padding: "8px 16px",
-                          fontWeight: 700,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Go to Wallet & Add Money →
-                      </button>
-                    )}
+                  <div className="auth-tabs">
+                    <div
+                      className={`auth-tab ${authTab === "register" ? "active" : ""}`}
+                      onClick={() => { setAuthTab("register"); setRegOtpError(null); }}
+                    >
+                      Register (New User)
+                    </div>
+                    <div
+                      className={`auth-tab ${authTab === "login" ? "active" : ""}`}
+                      onClick={() => { setAuthTab("login"); setLoginOtpError(null); }}
+                    >
+                      Login (Existing User)
+                    </div>
                   </div>
-                )}
-                {bookingSuccess && <div style={styles.success}>Booked successfully — {bookingSuccess?.appointment?._id ?? bookingSuccess?.appointment?.id ?? bookingSuccess?.id ?? "ID not returned"}</div>}
-              </div>
+
+                  {authTab === "register" && (
+                    <div style={{ marginTop: 12 }}>
+                      <label style={{ display: "block", fontSize: 13, marginBottom: 6, fontWeight: 600, color: "#374151" }}>
+                        Full Name
+                      </label>
+                      <input
+                        value={regName}
+                        onChange={(e) => setRegName(e.target.value)}
+                        placeholder="Enter your full name"
+                        style={styles.input}
+                      />
+
+                      <label style={{ display: "block", fontSize: 13, marginBottom: 6, fontWeight: 600, color: "#374151" }}>
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        value={regEmail}
+                        onChange={(e) => setRegEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        style={styles.input}
+                      />
+
+                      <label style={{ display: "block", fontSize: 13, marginBottom: 6, fontWeight: 600, color: "#374151" }}>
+                        Phone Number (Required)
+                      </label>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
+                        <input
+                          type="tel"
+                          value={regPhone}
+                          onChange={(e) => setRegPhone(e.target.value)}
+                          placeholder="+91 9876543210"
+                          style={{ ...styles.input, marginBottom: 0, flex: "1 1 220px" }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => requestRegisterOtp()}
+                          disabled={regOtpLoading}
+                          style={{ ...styles.otpBtn, whiteSpace: "nowrap", flex: "0 0 auto" }}
+                        >
+                          {regOtpLoading ? "Sending..." : (resendCooldownReg > 0 ? `Wait ${resendCooldownReg}s` : "GET OTP")}
+                        </button>
+                      </div>
+
+                      {regOtpSent && (
+                        <div style={{ marginTop: 14, background: "#f9fafb", padding: 16, borderRadius: 10, border: "1px solid #e5e7eb" }}>
+                          <label style={{ display: "block", fontSize: 13, marginBottom: 6, fontWeight: 700, color: "#111827" }}>
+                            Enter 6-Digit OTP sent to your email
+                          </label>
+                          <input
+                            value={regOtp}
+                            onChange={(e) => setRegOtp(e.target.value)}
+                            placeholder="Enter 6-digit OTP"
+                            style={{ ...styles.input, marginBottom: 12, fontSize: 18, letterSpacing: 2, textAlign: "center" }}
+                          />
+                          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                            <button
+                              type="button"
+                              onClick={verifyRegisterOtp}
+                              disabled={regOtpLoading}
+                              style={styles.verifyBtn}
+                            >
+                              {regOtpLoading ? "Verifying..." : "Verify OTP & Continue"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setRegOtpSent(false); setRegOtp(""); setRegOtpError(null); }}
+                              style={{ padding: "10px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", color: "#374151", cursor: "pointer", fontWeight: 600 }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { if (resendCooldownReg === 0) { requestRegisterOtp({ forceResend: true }); } else { setRegOtpError(`Please wait ${resendCooldownReg}s`); } }}
+                              disabled={regOtpLoading}
+                              style={{ padding: "10px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", color: "#374151", cursor: "pointer", fontWeight: 600 }}
+                            >
+                              Resend OTP
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {regOtpError && <div style={styles.error}>{regOtpError}</div>}
+                    </div>
+                  )}
+
+                  {authTab === "login" && (
+                    <div style={{ marginTop: 12 }}>
+                      <label style={{ display: "block", fontSize: 13, marginBottom: 6, fontWeight: 600, color: "#374151" }}>
+                        Registered Email Address
+                      </label>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
+                        <input
+                          type="email"
+                          value={loginEmail}
+                          onChange={(e) => setLoginEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          style={{ ...styles.input, marginBottom: 0, flex: "1 1 220px" }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => requestLoginOtp()}
+                          disabled={loginOtpLoading}
+                          style={{ ...styles.otpBtn, whiteSpace: "nowrap", flex: "0 0 auto" }}
+                        >
+                          {loginOtpLoading ? "Sending..." : (resendCooldownLogin > 0 ? `Wait ${resendCooldownLogin}s` : "GET OTP")}
+                        </button>
+                      </div>
+
+                      {loginOtpSent && (
+                        <div style={{ marginTop: 14, background: "#f9fafb", padding: 16, borderRadius: 10, border: "1px solid #e5e7eb" }}>
+                          <label style={{ display: "block", fontSize: 13, marginBottom: 6, fontWeight: 700, color: "#111827" }}>
+                            Enter 6-Digit OTP sent to your email
+                          </label>
+                          <input
+                            value={loginOtp}
+                            onChange={(e) => setLoginOtp(e.target.value)}
+                            placeholder="Enter 6-digit OTP"
+                            style={{ ...styles.input, marginBottom: 12, fontSize: 18, letterSpacing: 2, textAlign: "center" }}
+                          />
+                          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                            <button
+                              type="button"
+                              onClick={verifyLoginOtp}
+                              disabled={loginOtpLoading}
+                              style={styles.verifyBtn}
+                            >
+                              {loginOtpLoading ? "Verifying..." : "Verify OTP & Continue"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setLoginOtpSent(false); setLoginOtp(""); setLoginOtpError(null); }}
+                              style={{ padding: "10px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", color: "#374151", cursor: "pointer", fontWeight: 600 }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { if (resendCooldownLogin === 0) { requestLoginOtp(); } else { setLoginOtpError(`Please wait ${resendCooldownLogin}s`); } }}
+                              disabled={loginOtpLoading}
+                              style={{ padding: "10px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", color: "#374151", cursor: "pointer", fontWeight: 600 }}
+                            >
+                              Resend OTP
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {loginOtpError && <div style={styles.error}>{loginOtpError}</div>}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {bookingSuccess ? (
+                <div
+                  style={{
+                    marginTop: 20,
+                    background: "#f0fdf4",
+                    border: "1.5px solid #86efac",
+                    borderRadius: 14,
+                    padding: "24px 20px",
+                    textAlign: "center",
+                    boxShadow: "0 6px 20px rgba(34,197,94,0.08)",
+                  }}
+                >
+                  <div style={{ fontSize: 44, marginBottom: 8 }}>🎉</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#166534" }}>
+                    Appointment Booked Successfully!
+                  </div>
+                  <p style={{ color: "#374151", fontSize: 14, marginTop: 8, marginBottom: 18, lineHeight: 1.5 }}>
+                    Aapka consultation confirm ho chuka hai. Time aane par aap apne profile se direct video call join kar sakte hain.
+                  </p>
+
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      flexDirection: "column",
+                      gap: 6,
+                      background: "#ffffff",
+                      border: "1px solid #bbf7d0",
+                      padding: "12px 18px",
+                      borderRadius: 10,
+                      marginBottom: 20,
+                      textAlign: "left",
+                      width: "100%",
+                      maxWidth: 380,
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <div style={{ fontSize: 13, color: "#4b5563" }}>
+                      <strong>Consultant:</strong> {professional?.name || "Professional"}
+                    </div>
+                    <div style={{ fontSize: 13, color: "#4b5563" }}>
+                      <strong>Date & Time:</strong> {selectedDate || bookingDraft?.date} ({selectedStartTime || bookingDraft?.startTime} - {selectedEndTime || bookingDraft?.endTime})
+                    </div>
+                    <div style={{ fontSize: 13, color: "#4b5563" }}>
+                      <strong>Booking Reference:</strong> #{String(bookingSuccess?.appointment?._id || bookingSuccess?.appointment?.id || "").slice(-6).toUpperCase()}
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/user-profile")}
+                      style={{
+                        background: PRIMARY,
+                        color: "#fff",
+                        border: "none",
+                        padding: "12px 24px",
+                        borderRadius: 10,
+                        fontWeight: 700,
+                        fontSize: 15,
+                        cursor: "pointer",
+                        boxShadow: "0 4px 12px rgba(202,170,147,0.35)",
+                      }}
+                    >
+                      View My Appointments →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/")}
+                      style={{
+                        background: "#ffffff",
+                        color: "#374151",
+                        border: "1.5px solid #d1d5db",
+                        padding: "12px 20px",
+                        borderRadius: 10,
+                        fontWeight: 600,
+                        fontSize: 15,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Home
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ marginTop: 22 }}>
+                    <button
+                      type="button"
+                      onClick={handleConfirmBooking}
+                      disabled={bookingLoading}
+                      style={{ ...styles.primaryBtn, width: "100%", opacity: bookingLoading ? 0.8 : 1 }}
+                    >
+                      {bookingLoading ? "Booking Appointment..." : "Confirm Booking"}
+                    </button>
+                  </div>
+
+                  {bookingError && (
+                    <div style={styles.error}>
+                      <div>{bookingError}</div>
+                      {bookingError.toLowerCase().includes("wallet") && (
+                        <button
+                          type="button"
+                          onClick={() => navigate("/user-profile")}
+                          style={{
+                            marginTop: 10,
+                            background: "#CAAA93",
+                            color: "#03182A",
+                            border: "none",
+                            borderRadius: 8,
+                            padding: "8px 16px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          Go to Wallet & Add Money →
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -42,13 +42,14 @@ const DailyCall = forwardRef(
     };
 
     const cleanup = async () => {
-      if (dailyRef.current) {
+      const activeFrame = dailyRef.current || window.__DAILY_IFRAME__;
+      if (activeFrame) {
         try {
-          await dailyRef.current.leave();
+          await activeFrame.leave();
         } catch { }
 
         try {
-          dailyRef.current.destroy();
+          activeFrame.destroy();
         } catch { }
 
         dailyRef.current = null;
@@ -64,6 +65,12 @@ const DailyCall = forwardRef(
       setError(null);
     };
 
+    useEffect(() => {
+      return () => {
+        cleanup();
+      };
+    }, []);
+
     const joinRoom = useCallback(async () => {
       if (!roomName || !token) {
         setError("Missing roomName or token");
@@ -73,61 +80,62 @@ const DailyCall = forwardRef(
       setCallState("joining");
       setShowInterface(true);
 
-      const Daily = await loadDaily();
-      const url = `https://shaadiundo.daily.co/${roomName}?enable_emoji_reactions=false&enable_hand_raising=false&enable_reactions_ui=false&enable_hand_raising_ui=false`;
-
-      // Prevent duplication 
-      if (window.__DAILY_IFRAME__) {
-        dailyRef.current = window.__DAILY_IFRAME__;
-        try {
-          await dailyRef.current.join({ url, token, userName: user.name });
-          setCallState("joined");
-          return;
-        } catch {
-          await cleanup();
-        }
-      }
-
-      await cleanup();
-
-      const frame = Daily.createFrame(containerRef.current, {
-        iframeStyle: {
-          width: "100%",
-          height: "100%",
-          border: "0",
-          borderRadius: "8px",
-          position: "absolute",
-          top: 0,
-          left: 0
-        },
-        showLeaveButton: true,
-        showFullscreenButton: true,
-        activeSpeakerMode: false, // 👈 Force Grid View
-        dailyConfig: {
-          experimentalChromeVideoMuteLightOff: true
-        }
-      });
-
-      dailyRef.current = frame;
-      window.__DAILY_IFRAME__ = frame;
-
-      frame.on("joined-meeting", () => {
-        setCallState("joined");
-        if (onJoined) onJoined();
-      });
-
-      frame.on("participant-joined", () => setBothJoined(true));
-      frame.on("participant-left", () => setBothJoined(false));
-      frame.on("left-meeting", async () => {
-        if (onLeft) onLeft();
-        setCallState("left");
-        await cleanup();
-      });
-
       try {
+        const Daily = await loadDaily();
+        const dailyDomain = import.meta.env.VITE_DAILY_DOMAIN || "shaadiundo.daily.co";
+        const url = `https://${dailyDomain}/${roomName}?enable_emoji_reactions=false&enable_hand_raising=false&enable_reactions_ui=false&enable_hand_raising_ui=false`;
+
+        // Ensure containerRef is attached to the DOM
+        let retries = 0;
+        while (!containerRef.current && retries < 10) {
+          await new Promise((r) => setTimeout(r, 50));
+          retries++;
+        }
+
+        if (!containerRef.current) {
+          throw new Error("Video container element not found");
+        }
+
+        await cleanup();
+
+        const frame = Daily.createFrame(containerRef.current, {
+          iframeStyle: {
+            width: "100%",
+            height: "100%",
+            border: "0",
+            borderRadius: "8px",
+            position: "absolute",
+            top: 0,
+            left: 0
+          },
+          showLeaveButton: true,
+          showFullscreenButton: true,
+          activeSpeakerMode: false, // 👈 Force Grid View
+          dailyConfig: {
+            experimentalChromeVideoMuteLightOff: true
+          }
+        });
+
+        dailyRef.current = frame;
+        window.__DAILY_IFRAME__ = frame;
+
+        frame.on("joined-meeting", () => {
+          setCallState("joined");
+          if (onJoined) onJoined();
+        });
+
+        frame.on("participant-joined", () => setBothJoined(true));
+        frame.on("participant-left", () => setBothJoined(false));
+        frame.on("left-meeting", async () => {
+          if (onLeft) onLeft();
+          setCallState("left");
+          await cleanup();
+        });
+
         await frame.join({ url, token, userName: user.name });
       } catch (err) {
-        setError(err.message);
+        console.error("Daily joinRoom error:", err);
+        setError(err.message || "Failed to join video call");
         setCallState("error");
       }
     }, [roomName, token, user.name]);
@@ -139,9 +147,12 @@ const DailyCall = forwardRef(
 
     useEffect(() => {
       if (autoJoin && roomName && token) {
-        setTimeout(() => joinRoom(), 600);
+        const timer = setTimeout(() => {
+          joinRoom();
+        }, 300);
+        return () => clearTimeout(timer);
       }
-    }, []);
+    }, [autoJoin, roomName, token, joinRoom]);
 
     return (
       <div style={{ width: "100%", position: "relative" }}>
@@ -275,21 +286,20 @@ const DailyCall = forwardRef(
           </div>
         )}
 
-        {(callState === "joining" ||
-          callState === "joined" ||
-          showInterface) && (
-            <div
-              ref={containerRef}
-              style={{
-                width: "100%",
-                height,
-                background: "#111",
-                borderRadius: 10,
-                overflow: "hidden",
-                marginTop: 10
-              }}
-            />
-          )}
+        {/* Video Frame Container - Always in DOM so containerRef.current is never null */}
+        <div
+          ref={containerRef}
+          style={{
+            width: "100%",
+            height,
+            background: "#111",
+            borderRadius: 10,
+            overflow: "hidden",
+            marginTop: 10,
+            position: "relative",
+            display: (callState === "joining" || callState === "joined" || showInterface) ? "block" : "none"
+          }}
+        />
 
 
       </div>

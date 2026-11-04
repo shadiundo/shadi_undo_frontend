@@ -7,7 +7,7 @@ import logo from "@/assets/images/shaadi-logo.png";
 import { socket } from "@/lib/socket";
 
 
-const API_URL = import.meta.env.VITE_API_URL || "";
+const API_URL = import.meta.env.VITE_API_URL || "https://shadi-undo-backend.onrender.com";
 
 const ACTIVE_CALL_KEY = "activeCall_v1";
 
@@ -951,51 +951,61 @@ function RecentAppointments() {
     return arr;
   }, [appointments, search, statusFilter, sortBy]);
 
-  // Filter dropdown for mobile
+  // Filter dropdown for mobile & desktop
   const FilterDropdown = () => (
     <div style={{
       display: 'flex',
       flexDirection: isSM ? 'column' : 'row',
       gap: '8px',
-      width: '100%',
+      width: isSM ? '100%' : 'auto',
       marginBottom: isSM ? '16px' : '0'
     }}>
       <select
         value={statusFilter}
         onChange={(e) => setStatusFilter(e.target.value)}
         style={{
-          padding: "clamp(10px, 2.5vw, 12px) clamp(10px, 2vw, 16px)",
-          borderRadius: "clamp(6px, 1vw, 8px)",
+          padding: "10px 14px",
+          borderRadius: "8px",
           flex: 1,
-          fontSize: "clamp(13px, 1.5vw, 14px)",
+          fontSize: "14px",
           minHeight: "44px",
-          border: "1px solid #e1e1e1",
-          background: "#fff"
+          border: "1px solid #D1D5DB",
+          background: "#ffffff",
+          color: "#1F2937",
+          fontWeight: 500,
+          cursor: "pointer",
+          outline: "none",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.04)"
         }}
       >
-        <option value="all">All Status</option>
-        <option value="requested">Requested</option>
-        <option value="pending">Pending</option>
-        <option value="confirmed">Confirmed</option>
-        <option value="ongoing">Ongoing</option>
-        <option value="completed">Completed</option>
-        <option value="cancelled">Cancelled</option>
+        <option value="all" style={{ color: "#1F2937", background: "#fff" }}>All Status</option>
+        <option value="requested" style={{ color: "#1F2937", background: "#fff" }}>Requested</option>
+        <option value="pending" style={{ color: "#1F2937", background: "#fff" }}>Pending</option>
+        <option value="confirmed" style={{ color: "#1F2937", background: "#fff" }}>Confirmed</option>
+        <option value="ongoing" style={{ color: "#1F2937", background: "#fff" }}>Ongoing</option>
+        <option value="completed" style={{ color: "#1F2937", background: "#fff" }}>Completed</option>
+        <option value="cancelled" style={{ color: "#1F2937", background: "#fff" }}>Cancelled</option>
       </select>
       <select
         value={sortBy}
         onChange={(e) => setSortBy(e.target.value)}
         style={{
-          padding: "clamp(10px, 2.5vw, 12px) clamp(10px, 2vw, 16px)",
-          borderRadius: "clamp(6px, 1vw, 8px)",
+          padding: "10px 14px",
+          borderRadius: "8px",
           flex: 1,
-          fontSize: "clamp(13px, 1.5vw, 14px)",
+          fontSize: "14px",
           minHeight: "44px",
-          border: "1px solid #e1e1e1",
-          background: "#fff"
+          border: "1px solid #D1D5DB",
+          background: "#ffffff",
+          color: "#1F2937",
+          fontWeight: 500,
+          cursor: "pointer",
+          outline: "none",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.04)"
         }}
       >
-        <option value="newest">Newest First</option>
-        <option value="nearest">Nearest First</option>
+        <option value="newest" style={{ color: "#1F2937", background: "#fff" }}>Newest First</option>
+        <option value="nearest" style={{ color: "#1F2937", background: "#fff" }}>Nearest First</option>
       </select>
     </div>
   );
@@ -1119,23 +1129,23 @@ function RecentAppointments() {
         <div style={{
           display: isSM ? "none" : "flex",
           flexDirection: isMD ? "column" : "row",
-          gap: "clamp(8px, 2vw, 12px)",
-          alignItems: "stretch",
-          width: isMD ? "100%" : "auto",
-          minWidth: isMD ? "auto" : "300px"
+          gap: "10px",
+          alignItems: "center",
+          width: isMD ? "100%" : "auto"
         }}>
           <div style={{
             display: "flex",
             alignItems: "center",
-            gap: "clamp(6px, 1vw, 8px)",
-            background: "#fff",
-            padding: "clamp(8px, 2vw, 10px) clamp(12px, 2vw, 16px)",
-            borderRadius: "clamp(6px, 1vw, 8px)",
+            gap: "8px",
+            background: "#ffffff",
+            padding: "10px 14px",
+            borderRadius: "8px",
             flex: isMD ? 1 : "none",
-            border: "1px solid #e1e1e1",
-            minWidth: isMD ? "auto" : "200px"
+            border: "1px solid #D1D5DB",
+            minWidth: isMD ? "auto" : "240px",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.04)"
           }}>
-            <IconifyIcon icon="mdi:magnify" style={{ fontSize: "clamp(16px, 2vw, 18px)", color: "#6c757d", flexShrink: 0 }} />
+            <IconifyIcon icon="mdi:magnify" style={{ fontSize: "18px", color: "#64748B", flexShrink: 0 }} />
             <input
               placeholder="Search appointments..."
               value={search}
@@ -1144,9 +1154,10 @@ function RecentAppointments() {
                 border: "none",
                 outline: "none",
                 width: "100%",
-                fontSize: "clamp(13px, 1.5vw, 14px)",
+                fontSize: "14px",
                 minWidth: 0,
-                background: "transparent"
+                background: "transparent",
+                color: "#111827"
               }}
             />
           </div>
@@ -1156,21 +1167,24 @@ function RecentAppointments() {
               <FilterDropdown />
               <button
                 onClick={() => fetchRecentAppointments()}
+                title="Refresh appointments"
                 style={{
-                  background: "#fff",
-                  border: "1px solid rgba(16,24,40,0.06)",
-                  padding: "clamp(10px, 2vw, 12px)",
-                  borderRadius: "clamp(6px, 1vw, 8px)",
+                  background: "#ffffff",
+                  border: "1px solid #D1D5DB",
+                  padding: "10px 14px",
+                  borderRadius: "8px",
                   flexShrink: 0,
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   minHeight: "44px",
+                  minWidth: "44px",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
                   transition: "all 0.2s ease"
                 }}
               >
-                <IconifyIcon icon="solar:refresh-line-duotone" style={{ fontSize: "clamp(16px, 2vw, 18px)", color: "#4f46e5" }} />
+                <IconifyIcon icon="solar:refresh-line-duotone" style={{ fontSize: "20px", color: "#CAAA93" }} />
               </button>
             </>
           )}
@@ -1182,13 +1196,14 @@ function RecentAppointments() {
             display: "flex",
             alignItems: "center",
             gap: "8px",
-            background: "#fff",
-            padding: "12px 16px",
+            background: "#ffffff",
+            padding: "10px 14px",
             borderRadius: "8px",
             width: "100%",
-            border: "1px solid #e1e1e1"
+            border: "1px solid #D1D5DB",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.04)"
           }}>
-            <IconifyIcon icon="mdi:magnify" style={{ fontSize: "18px", color: "#6c757d", flexShrink: 0 }} />
+            <IconifyIcon icon="mdi:magnify" style={{ fontSize: "18px", color: "#64748B", flexShrink: 0 }} />
             <input
               placeholder="Search appointments..."
               value={search}
@@ -1199,7 +1214,8 @@ function RecentAppointments() {
                 width: "100%",
                 fontSize: "14px",
                 minWidth: 0,
-                background: "transparent"
+                background: "transparent",
+                color: "#111827"
               }}
             />
           </div>
@@ -1319,40 +1335,43 @@ function RecentAppointments() {
               <button
                 onClick={() => extendAppointment(activeCall.id)}
                 style={{
-                  padding: "clamp(10px, 2vw, 12px) clamp(12px, 2vw, 16px)",
-                  borderRadius: "clamp(6px, 1vw, 8px)",
-                  background: "#fff",
-                  border: "1px solid rgba(16,24,40,0.12)",
-                  fontSize: "clamp(13px, 1.5vw, 14px)",
+                  padding: "10px 18px",
+                  borderRadius: "8px",
+                  background: "#ffffff",
+                  color: "#374151",
+                  border: "1px solid #D1D5DB",
+                  fontSize: "14px",
                   flex: isSM ? 1 : "none",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "6px",
-                  fontWeight: 500,
+                  fontWeight: 600,
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
                   transition: "all 0.2s ease"
                 }}
               >
-                <IconifyIcon icon="mdi:clock-plus-outline" style={{ fontSize: "16px" }} />
+                <IconifyIcon icon="mdi:clock-plus-outline" style={{ fontSize: "16px", color: "#CAAA93" }} />
                 {!isXS && "Extend"}
               </button>
               <button
                 onClick={() => endAppointment(activeCall.id)}
                 style={{
-                  padding: "clamp(10px, 2vw, 12px) clamp(12px, 2vw, 16px)",
-                  borderRadius: "clamp(6px, 1vw, 8px)",
-                  background: isBeforeMinEnd(activeCall) ? "#f3f4f6" : "#ef4444",
-                  color: isBeforeMinEnd(activeCall) ? "#9ca3af" : "#fff",
+                  padding: "10px 18px",
+                  borderRadius: "8px",
+                  background: isBeforeMinEnd(activeCall) ? "#F3F4F6" : "#DC2626",
+                  color: isBeforeMinEnd(activeCall) ? "#9CA3AF" : "#FFFFFF",
                   border: "none",
                   cursor: isBeforeMinEnd(activeCall) ? "not-allowed" : "pointer",
-                  fontSize: "clamp(13px, 1.5vw, 14px)",
+                  fontSize: "14px",
                   flex: isSM ? 1 : "none",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "6px",
-                  fontWeight: 500,
+                  fontWeight: 600,
+                  boxShadow: isBeforeMinEnd(activeCall) ? "none" : "0 2px 6px rgba(220,38,38,0.3)",
                   transition: "all 0.2s ease"
                 }}
                 disabled={isBeforeMinEnd(activeCall)}
@@ -1380,6 +1399,8 @@ function RecentAppointments() {
               user={{ name: "Professional" }}
               headerText="Privileged and Confidential"
               logoUrl={null}
+              height="100%"
+              autoJoin={true}
               onParticipantsUpdate={(count, participants) => handleParticipantsUpdate(count, participants)}
               onBothJoined={handleBothJoined}
               onCallEnd={() => {
@@ -1765,19 +1786,20 @@ function RecentAppointments() {
                       <button
                         onClick={() => startAppointment(id)}
                         style={{
-                          padding: "clamp(12px, 2vw, 14px) clamp(16px, 3vw, 20px)",
-                          borderRadius: "clamp(6px, 1vw, 8px)",
-                          background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-                          color: "#fff",
+                          padding: "11px 20px",
+                          borderRadius: "8px",
+                          background: "#CAAA93",
+                          color: "#FFFFFF",
                           border: "none",
-                          fontSize: "clamp(14px, 2vw, 15px)",
+                          fontSize: "14px",
                           width: "100%",
                           cursor: "pointer",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          gap: "10px",
+                          gap: "8px",
                           fontWeight: 600,
+                          boxShadow: "0 2px 8px rgba(202, 170, 147, 0.4)",
                           transition: "all 0.2s ease"
                         }}
                       >
@@ -1787,46 +1809,49 @@ function RecentAppointments() {
                     ) : statusKey === "ongoing" ? (
                       <div style={{
                         display: "flex",
-                        gap: "clamp(8px, 2vw, 12px)",
+                        gap: "10px",
                         width: "100%"
                       }}>
                         <button
                           onClick={() => extendAppointment(id)}
                           style={{
-                            padding: "clamp(10px, 2vw, 12px) clamp(12px, 2vw, 16px)",
-                            borderRadius: "clamp(6px, 1vw, 8px)",
-                            background: "#fff",
-                            border: "1px solid #d1d5db",
-                            fontSize: "clamp(13px, 1.5vw, 14px)",
+                            padding: "10px 16px",
+                            borderRadius: "8px",
+                            background: "#ffffff",
+                            color: "#374151",
+                            border: "1px solid #D1D5DB",
+                            fontSize: "14px",
                             flex: 1,
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             gap: "8px",
-                            fontWeight: 500,
+                            fontWeight: 600,
+                            boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
                             transition: "all 0.2s ease"
                           }}
                         >
-                          <IconifyIcon icon="mdi:clock-plus-outline" style={{ fontSize: "16px" }} />
+                          <IconifyIcon icon="mdi:clock-plus-outline" style={{ fontSize: "16px", color: "#CAAA93" }} />
                           Extend
                         </button>
                         <button
                           onClick={() => endAppointment(id)}
                           style={{
-                            padding: "clamp(10px, 2vw, 12px) clamp(12px, 2vw, 16px)",
-                            borderRadius: "clamp(6px, 1vw, 8px)",
-                            background: "#ef4444",
-                            color: "#fff",
+                            padding: "10px 16px",
+                            borderRadius: "8px",
+                            background: "#DC2626",
+                            color: "#FFFFFF",
                             border: "none",
-                            fontSize: "clamp(13px, 1.5vw, 14px)",
+                            fontSize: "14px",
                             flex: 1,
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             gap: "8px",
-                            fontWeight: 500,
+                            fontWeight: 600,
+                            boxShadow: "0 2px 6px rgba(220,38,38,0.3)",
                             transition: "all 0.2s ease"
                           }}
                         >
@@ -1898,6 +1923,7 @@ function ReasonModalContent({ onSubmit, onCancel, isMobile }) {
             borderRadius: "clamp(6px, 1.5vw, 8px)",
             border: "1px solid #d1d5db",
             background: "#fff",
+            color: "#374151",
             fontSize: "clamp(14px, 2vw, 15px)",
             width: isMobile ? "100%" : "auto",
             cursor: "pointer",
@@ -1955,6 +1981,7 @@ function ConfirmModalContent({ text, onConfirm, onCancel, isMobile }) {
             borderRadius: "clamp(6px, 1.5vw, 8px)",
             border: "1px solid #d1d5db",
             background: "#fff",
+            color: "#374151",
             fontSize: "clamp(14px, 2vw, 15px)",
             width: isMobile ? "100%" : "auto",
             minWidth: "120px",
@@ -2065,6 +2092,7 @@ function ExtendModalContent({ defaultMinutes = 15, onSubmit, onCancel, isMobile 
             borderRadius: "clamp(6px, 1.5vw, 8px)",
             border: "1px solid #d1d5db",
             background: "#fff",
+            color: "#374151",
             fontSize: "clamp(14px, 2vw, 15px)",
             width: isMobile ? "100%" : "auto",
             minWidth: "120px",

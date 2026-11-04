@@ -1,7 +1,9 @@
 import { io } from "socket.io-client";
 
-export const socket = io(import.meta.env.VITE_API_URL, {
-  transports: ["websocket"],
+const SOCKET_URL = import.meta.env.VITE_API_URL || "https://shadi-undo-backend.onrender.com";
+
+export const socket = io(SOCKET_URL, {
+  transports: ["websocket", "polling"],
   withCredentials: true,
-  secure: true,          // 👈 important for Render
+  secure: true,
 });

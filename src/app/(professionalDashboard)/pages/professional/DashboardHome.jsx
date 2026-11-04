@@ -22,10 +22,10 @@ import axios from "axios";
 
 /* ------------------  Analytics Cards  ------------------ */
 const analyticsCards = [
-  { id: 1, label: "Page Views", value: "13,647", icon: <BsEye />, bg: "#e0ebff", color: "#0a58ca" },
-  { id: 2, label: "Clicks", value: "9,526", icon: <BsMouse />, bg: "#dff7e2", color: "#0d8040" },
-  { id: 3, label: "Conversions", value: "65.2%", icon: <BsGraphUpArrow />, bg: "#fde3e6", color: "#b91c1c" },
-  { id: 4, label: "New Users", value: "9.5k", icon: <BsPersonPlus />, bg: "#fff3cd", color: "#997404" },
+  { id: 1, label: "Page Views", value: "13,647", icon: <BsEye />, bg: "#e0ebff", color: "#0a58ca", trend: "+14.2%" },
+  { id: 2, label: "Clicks", value: "9,526", icon: <BsMouse />, bg: "#dff7e2", color: "#0d8040", trend: "+8.5%" },
+  { id: 3, label: "Conversions", value: "65.2%", icon: <BsGraphUpArrow />, bg: "#fde3e6", color: "#b91c1c", trend: "+3.8%" },
+  { id: 4, label: "New Users", value: "9.5k", icon: <BsPersonPlus />, bg: "#fff3cd", color: "#997404", trend: "+24.0%" },
 ];
 
 /* ------------------  Mock / static data (unchanged) ------------------ */
@@ -36,7 +36,7 @@ const appointmentsOverTime = [
   { month: "Oct", appointments: 76 }, { month: "Nov", appointments: 54 }, { month: "Dec", appointments: 62 },
 ];
 const conversionPieData = [{ name: "Returning", value: 65.2 }, { name: "New", value: 34.8 }];
-const PIE_COLORS = ["#8b5cf6", "#e6e9f2"];
+const PIE_COLORS = ["#CAAA93", "#E2E8F0"];
 const connectedClients = [
   { name: "John Doe", email: "johndoe@gmail.com", lastActive: "2 days ago" },
   { name: "Maya Patel", email: "mayapatel@gmail.com", lastActive: "5 days ago" },
@@ -50,30 +50,103 @@ const connectedClients = [
 export default function DashboardHome() {
   const [range, setRange] = useState("1M");
   return (
-    <div className="container my-4">
+    <div className="container-fluid px-0 my-3">
       {/* Header */}
-      <div className="d-flex align-items-start justify-content-between mb-4">
-        <div><h1 className="h4 mb-1">Professional Dashboard</h1></div>
+      <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+        <div>
+          <h1 style={{ fontSize: "24px", fontWeight: 700, color: "#111827", margin: 0, letterSpacing: "-0.3px" }}>
+            Professional Dashboard
+          </h1>
+          <p style={{ margin: "4px 0 0 0", color: "#64748B", fontSize: "14px" }}>
+            Overview of your consultations, analytics, and client activity
+          </p>
+        </div>
         <div className="d-flex gap-2">
-          <button className="btn btn-outline-secondary btn-sm">Export</button>
-          <button className="btn btn-primary btn-sm" style={{ backgroundColor: "#CAAA93", borderColor: "#CAAA93" }}>
-            New Appointment
+          <button
+            onClick={() => window.print()}
+            type="button"
+            className="btn btn-sm"
+            style={{
+              background: "#ffffff",
+              border: "1px solid #D1D5DB",
+              color: "#374151",
+              fontWeight: 600,
+              padding: "9px 18px",
+              borderRadius: "8px",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+              cursor: "pointer"
+            }}
+          >
+            Export
           </button>
+          <a
+            href="/professional/appointments"
+            className="btn btn-sm text-decoration-none"
+            style={{
+              backgroundColor: "#CAAA93",
+              border: "none",
+              color: "#ffffff",
+              fontWeight: 600,
+              padding: "9px 20px",
+              borderRadius: "8px",
+              boxShadow: "0 2px 8px rgba(202, 170, 147, 0.4)",
+              cursor: "pointer"
+            }}
+          >
+            New Appointment
+          </a>
         </div>
       </div>
 
       {/* Analytics Cards */}
       <div className="row g-3 mb-4">
         {analyticsCards.map((c) => (
-          <div className="col-12 col-md-6 col-lg-3" key={c.id}>
-            <div className="card h-100 shadow-sm">
-              <div className="card-body d-flex align-items-center" style={{ gap: 12 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 8, background: c.bg, color: c.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
+          <div className="col-12 col-sm-6 col-xl-3" key={c.id}>
+            <div
+              className="card h-100"
+              style={{
+                background: "#ffffff",
+                border: "1px solid #E5E7EB",
+                borderRadius: "14px",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+                padding: "20px"
+              }}
+            >
+              <div className="d-flex align-items-center justify-content-between mb-3">
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 12,
+                    background: c.bg,
+                    color: c.color,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 22
+                  }}
+                >
                   {c.icon}
                 </div>
-                <div>
-                  <div className="text-muted small">{c.label}</div>
-                  <div className="h5 mb-0">{c.value}</div>
+                <span
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: "#059669",
+                    background: "#ECFDF5",
+                    padding: "3px 8px",
+                    borderRadius: "12px"
+                  }}
+                >
+                  {c.trend}
+                </span>
+              </div>
+              <div>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  {c.label}
+                </div>
+                <div style={{ fontSize: "28px", fontWeight: 700, color: "#111827", marginTop: "4px", letterSpacing: "-0.5px" }}>
+                  {c.value}
                 </div>
               </div>
             </div>
@@ -85,84 +158,154 @@ export default function DashboardHome() {
       <div className="row g-4">
         {/* Left Column */}
         <div className="col-12 col-lg-8">
-          <div className="card shadow-sm h-100">
-            <div className="card-body">
-              <div className="d-flex align-items-start justify-content-between mb-3">
+          <div
+            className="card h-100"
+            style={{
+              background: "#ffffff",
+              border: "1px solid #E5E7EB",
+              borderRadius: "16px",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.04)"
+            }}
+          >
+            <div className="card-body" style={{ padding: "24px" }}>
+              <div className="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 mb-3">
                 <div>
-                  <h5 className="card-title mb-1">Appointments Overview</h5>
-                  <div className="text-muted small">Total appointments, trends and capacity planning</div>
+                  <h5 style={{ fontSize: "18px", fontWeight: 700, color: "#111827", margin: 0 }}>
+                    Appointments Overview
+                  </h5>
+                  <div style={{ color: "#64748B", fontSize: "13px", marginTop: "2px" }}>
+                    Total appointments, trends and capacity planning
+                  </div>
                 </div>
-                <div className="btn-group btn-group-sm" role="group" aria-label="range">
+                <div
+                  style={{
+                    display: "inline-flex",
+                    background: "#F1F5F9",
+                    padding: "4px",
+                    borderRadius: "10px",
+                    gap: "2px"
+                  }}
+                >
                   {["ALL", "1M", "6M", "1Y"].map((r) => (
-                    <button key={r} onClick={() => setRange(r)} type="button"
-                      className={`btn ${range === r ? "btn-primary" : "btn-outline-secondary"}`}
-                      style={{ backgroundColor: range === r ? "#CAAA93" : "transparent", borderColor: "#CAAA93", color: range === r ? "#fff" : "#CAAA93" }}>
+                    <button
+                      key={r}
+                      onClick={() => setRange(r)}
+                      type="button"
+                      style={{
+                        border: "none",
+                        background: range === r ? "#CAAA93" : "transparent",
+                        color: range === r ? "#ffffff" : "#64748B",
+                        fontWeight: 600,
+                        fontSize: "12px",
+                        padding: "6px 14px",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        transition: "all 0.15s ease",
+                        boxShadow: range === r ? "0 2px 6px rgba(202, 170, 147, 0.4)" : "none"
+                      }}
+                    >
                       {r}
                     </button>
                   ))}
                 </div>
               </div>
 
-
               {/* Chart */}
               <DashboardChart range={range} />
 
               {/* Summary boxes */}
-              <div className="row mt-3 g-3">
+              <div className="row mt-4 g-3">
                 <DashboardStats range={range} />
               </div>
 
               {/* Secondary Summary */}
               <div className="row mt-3 g-2">
-                <div className="col-12 col-md-4"><div className="border rounded p-2 text-center"><div className="small text-muted">Active Cases</div><div className="h6 mb-0">128</div></div></div>
-                <div className="col-12 col-md-4"><div className="border rounded p-2 text-center"><div className="small text-muted">No-shows (30d)</div><div className="h6 mb-0">8</div></div></div>
-                <div className="col-12 col-md-4"><div className="border rounded p-2 text-center"><div className="small text-muted">Average Fee</div><div className="h6 mb-0">$142</div></div></div>
+                <div className="col-12 col-md-4">
+                  <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "12px", textAlign: "center" }}>
+                    <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 500 }}>Active Cases</div>
+                    <div style={{ fontSize: "18px", fontWeight: 700, color: "#111827", marginTop: "2px" }}>128</div>
+                  </div>
+                </div>
+                <div className="col-12 col-md-4">
+                  <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "12px", textAlign: "center" }}>
+                    <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 500 }}>No-shows (30d)</div>
+                    <div style={{ fontSize: "18px", fontWeight: 700, color: "#111827", marginTop: "2px" }}>8</div>
+                  </div>
+                </div>
+                <div className="col-12 col-md-4">
+                  <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "12px", textAlign: "center" }}>
+                    <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 500 }}>Average Fee</div>
+                    <div style={{ fontSize: "18px", fontWeight: 700, color: "#111827", marginTop: "2px" }}>₹ 2,400</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Right Column */}
-        <div className="col-12 col-lg-4 d-flex flex-column" style={{ gap: 16 }}>
-          <div className="card shadow-sm">
-            <div className="card-body" style={{ padding: "16px 18px" }}>
-              <div className="d-flex align-items-center justify-content-between">
-                <h6 className="card-title mb-0">Conversions</h6>
-                <div className="text-muted small">This month</div>
+        <div className="col-12 col-lg-4 d-flex flex-column" style={{ gap: 20 }}>
+          <div
+            className="card"
+            style={{
+              background: "#ffffff",
+              border: "1px solid #E5E7EB",
+              borderRadius: "16px",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.04)"
+            }}
+          >
+            <div className="card-body" style={{ padding: "20px" }}>
+              <div className="d-flex align-items-center justify-content-between mb-3">
+                <h6 style={{ fontSize: "16px", fontWeight: 700, color: "#111827", margin: 0 }}>Conversions</h6>
+                <div style={{ fontSize: "12px", color: "#64748B" }}>This month</div>
               </div>
 
               <div className="d-flex align-items-center" style={{ marginTop: 12 }}>
                 <div style={{ width: 110, height: 110, minWidth: 110, minHeight: 110 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={conversionPieData} innerRadius={36} outerRadius={56} dataKey="value" startAngle={90} endAngle={450}>
+                      <Pie data={conversionPieData} innerRadius={36} outerRadius={54} dataKey="value" startAngle={90} endAngle={450}>
                         {conversionPieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />))}
                       </Pie>
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
 
-                <div style={{ marginLeft: 14, flex: 1 }}>
-                  <div className="h4 mb-0">65.2%</div>
-                  <div className="small text-muted">Returning Customers</div>
-                  <div className="small text-muted mt-2"><div>This week: <strong>23.5k</strong></div><div>Last week: <strong>41.05k</strong></div></div>
+                <div style={{ marginLeft: 16, flex: 1 }}>
+                  <div style={{ fontSize: "26px", fontWeight: 700, color: "#111827" }}>65.2%</div>
+                  <div style={{ fontSize: "13px", color: "#64748B" }}>Returning Customers</div>
+                  <div style={{ fontSize: "12px", color: "#64748B", marginTop: "8px" }}>
+                    <div>This week: <strong style={{ color: "#111827" }}>23.5k</strong></div>
+                    <div>Last week: <strong style={{ color: "#111827" }}>41.05k</strong></div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Recent Appointments (connected to backend) */}
 
           {/* Connected Clients */}
           <ConnectedClients />
         </div>
       </div>
 
-      {/* <RecentAppointments   /> */}
       {/* Footer Widgets */}
       <div className="row g-3 mt-4">
-        {[{ title: "Open Tasks", value: "24" }, { title: "Unread Messages", value: "5" }, { title: "Client Satisfaction", value: "4.6 / 5" }].map((item, i) => (
-          <div className="col-12 col-md-4" key={i}><div className="card p-2 shadow-sm text-center"><div className="small text-muted">{item.title}</div><div className="h6 mb-0">{item.value}</div></div></div>
+        {[{ title: "Open Tasks", value: "24" }, { title: "Unread Messages", value: "5" }, { title: "Client Satisfaction", value: "4.8 / 5" }].map((item, i) => (
+          <div className="col-12 col-md-4" key={i}>
+            <div
+              className="card text-center"
+              style={{
+                background: "#ffffff",
+                border: "1px solid #E5E7EB",
+                borderRadius: "14px",
+                padding: "18px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.03)"
+              }}
+            >
+              <div style={{ fontSize: "13px", color: "#64748B", fontWeight: 500 }}>{item.title}</div>
+              <div style={{ fontSize: "24px", fontWeight: 700, color: "#111827", marginTop: "4px" }}>{item.value}</div>
+            </div>
+          </div>
         ))}
       </div>
     </div>
@@ -255,7 +398,7 @@ function DashboardChart({ range }) {
           <XAxis dataKey="month" />
           <YAxis allowDecimals={false} />
           <Tooltip />
-          <Bar dataKey="appointments" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="appointments" fill="#CAAA93" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -313,24 +456,24 @@ function DashboardStats() {
   return (
     <>
       <div className="col-12 col-md-4">
-        <div className="border rounded p-3 h-100 d-flex flex-column justify-content-center text-center">
-          <div className="small text-muted">This Week</div>
-          <div className="h5 mb-0">{stats.thisWeek}</div>
-          <div className="small text-muted mt-1">Appointments scheduled</div>
+        <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "16px", textAlign: "center" }}>
+          <div style={{ fontSize: "13px", color: "#64748B", fontWeight: 500 }}>This Week</div>
+          <div style={{ fontSize: "24px", fontWeight: 700, color: "#111827", margin: "4px 0" }}>{stats.thisWeek}</div>
+          <div style={{ fontSize: "12px", color: "#94A3B8" }}>Appointments scheduled</div>
         </div>
       </div>
       <div className="col-12 col-md-4">
-        <div className="border rounded p-3 h-100 d-flex flex-column justify-content-center text-center">
-          <div className="small text-muted">Last Week</div>
-          <div className="h5 mb-0">{stats.lastWeek}</div>
-          <div className="small text-muted mt-1">Appointments scheduled</div>
+        <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "16px", textAlign: "center" }}>
+          <div style={{ fontSize: "13px", color: "#64748B", fontWeight: 500 }}>Last Week</div>
+          <div style={{ fontSize: "24px", fontWeight: 700, color: "#111827", margin: "4px 0" }}>{stats.lastWeek}</div>
+          <div style={{ fontSize: "12px", color: "#94A3B8" }}>Appointments scheduled</div>
         </div>
       </div>
       <div className="col-12 col-md-4">
-        <div className="border rounded p-3 h-100 d-flex flex-column justify-content-center text-center">
-          <div className="small text-muted">Total (Year)</div>
-          <div className="h5 mb-0">--</div>
-          <div className="small text-muted mt-1">Appointments</div>
+        <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "16px", textAlign: "center" }}>
+          <div style={{ fontSize: "13px", color: "#64748B", fontWeight: 500 }}>Total (Year)</div>
+          <div style={{ fontSize: "24px", fontWeight: 700, color: "#111827", margin: "4px 0" }}>--</div>
+          <div style={{ fontSize: "12px", color: "#94A3B8" }}>Appointments</div>
         </div>
       </div>
     </>
@@ -707,32 +850,61 @@ function ConnectedClients() {
   };
 
   return (
-    <div className="card shadow-sm">
-      <div className="card-body" style={{ padding: "16px 18px" }}>
+    <div
+      className="card"
+      style={{
+        background: "#ffffff",
+        border: "1px solid #E5E7EB",
+        borderRadius: "16px",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.04)"
+      }}
+    >
+      <div className="card-body" style={{ padding: "20px" }}>
         <div className="d-flex align-items-center justify-content-between mb-3">
-          <h6 className="card-title mb-0">Connected Clients</h6>
-          <a href="/professional/appointments" className="text-muted small" style={{ textDecoration: "none" }}>View Appointments</a>
+          <h6 style={{ fontSize: "16px", fontWeight: 700, color: "#111827", margin: 0 }}>Connected Clients</h6>
+          <a
+            href="/professional/appointments"
+            style={{ color: "#CAAA93", fontSize: "13px", fontWeight: 600, textDecoration: "none" }}
+          >
+            View Appointments
+          </a>
         </div>
 
         {loading ? (
-          <div className="text-center small text-muted">Loading clients...</div>
+          <div className="text-center small py-3" style={{ color: "#64748B" }}>Loading clients...</div>
         ) : clients.length === 0 ? (
-          <div className="text-center small text-muted">No clients found</div>
+          <div className="text-center small py-3" style={{ color: "#64748B" }}>No clients found</div>
         ) : (
-          <div style={{ maxHeight: 400, overflowY: "auto", scrollbarWidth: "none" }}>
+          <div style={{ maxHeight: 380, overflowY: "auto", scrollbarWidth: "none" }}>
             {clients.map((c, index) => (
-              <div key={c.id || index} className="d-flex align-items-center justify-content-between border rounded mb-2 p-2" style={{ background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
+              <div
+                key={c.id || index}
+                className="d-flex align-items-center justify-content-between mb-2 p-2"
+                style={{
+                  background: "#F8FAFC",
+                  border: "1px solid #EDF2F7",
+                  borderRadius: "10px"
+                }}
+              >
                 <div className="d-flex align-items-center gap-3">
-                  <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#eef2ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontWeight: 600, fontSize: 14, color: "#5b21b6" }}>{initials(c.name)}</span>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "50%",
+                      background: "#F5EBE6",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                  >
+                    <span style={{ fontWeight: 700, fontSize: 13, color: "#93684A" }}>{initials(c.name)}</span>
                   </div>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>{c.name}</div>
-                    <div style={{ fontSize: 12, color: "#6c757d" }}>{c.email ? `${c.email} · ` : ""}{c.lastActive}</div>
+                    <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>{c.name}</div>
+                    <div style={{ fontSize: 12, color: "#64748B" }}>{c.email ? `${c.email} · ` : ""}{c.lastActive}</div>
                   </div>
                 </div>
-                {/* View Case button could link to details if we had a route, for now filtered appointments? */}
-                {/* <button className="btn btn-outline-secondary btn-sm" style={{ fontSize: 12, padding: "2px 10px", borderRadius: 6 }}>View Case</button> */}
               </div>
             ))}
           </div>

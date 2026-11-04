@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Routes, Route, Link, useNavigate } from "react-router-dom";
+import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import { FaWallet } from "react-icons/fa";
 import DailyCall from "../../apps/appointments/DailyCall";
@@ -13,12 +13,12 @@ import { socket } from "@/lib/socket";
 
 
 const theme = {
-  bg: "#f8fafc",
+  bg: "#fbf7f4",
   card: "#ffffff",
-  muted: "#64748b",
-  primary: "#CAAA93",
+  muted: "#6b7280",
+  primary: "#ba8d6c",
   danger: "#ef4444",
-  border: "rgba(15,23,42,0.06)",
+  border: "#e5e7eb",
 };
 
 const formatDate = (d) => (d ? new Date(d).toLocaleString() : "-");
@@ -67,6 +67,7 @@ export function EditProfile({ apiBase = "/api" }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+
 
   useEffect(() => {
     let mounted = true;
@@ -163,6 +164,233 @@ export default function UserProfile({ apiBase = "/api" }) {
   const [active, setActive] = useState("Appointments");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "" });
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState(null);
+
+  const handleStartEdit = () => {
+    setEditForm({
+      name: profile?.name || "",
+      email: profile?.email || "",
+      phone: profile?.phone || "",
+    });
+    setEditError(null);
+    setActive("Profile");
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    setEditSaving(true);
+    setEditError(null);
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(buildUrl(`${apiBase}/profile/me`), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify(editForm),
+      });
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.success) {
+        setProfile((prev) => ({
+          ...prev,
+          name: editForm.name,
+          email: editForm.email,
+          phone: editForm.phone,
+        }));
+        setIsEditing(false);
+      } else {
+        setEditError(json?.message || "Failed to save profile changes");
+      }
+    } catch (err) {
+      setEditError(err.message || "Network error saving profile");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const [authTab, setAuthTab] = useState("login"); // "login" | "register"
+  const [authEmail, setAuthEmail] = useState("");
+  const [authName, setAuthName] = useState("");
+  const [authPhone, setAuthPhone] = useState("");
+  const [authOtp, setAuthOtp] = useState("");
+  const [authOtpSent, setAuthOtpSent] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState(null);
+  const [authSuccess, setAuthSuccess] = useState(null);
+  const [authCooldown, setAuthCooldown] = useState(0);
+
+  useEffect(() => {
+    if (authCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setAuthCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [authCooldown]);
+
+  const handleSendLoginOtp = async () => {
+    setAuthError(null);
+    setAuthSuccess(null);
+    if (!authEmail.trim()) {
+      setAuthError("Please enter your registered email address.");
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const res = await fetch(buildUrl("/api/auth/login"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: authEmail.trim() }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok) {
+        setAuthOtpSent(true);
+        setAuthCooldown(30);
+        setAuthSuccess(data?.message || "OTP sent to your email!");
+      } else {
+        setAuthError(data?.message || "Failed to send OTP. Please check your email.");
+      }
+    } catch (err) {
+      setAuthError(err.message || "Network error. Please try again.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleVerifyLoginOtp = async () => {
+    setAuthError(null);
+    setAuthSuccess(null);
+    if (!authOtp.trim() || authOtp.trim().length < 4) {
+      setAuthError("Please enter the 6-digit OTP.");
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const res = await fetch(buildUrl("/api/auth/login/verify"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: authEmail.trim(), otp: authOtp.trim() }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.token) {
+        localStorage.setItem("token", data.token);
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+        setAuthOtpSent(false);
+        setAuthOtp("");
+        setAuthSuccess("Login successful!");
+        setActive("Appointments");
+        await loadProfile();
+      } else {
+        setAuthError(data?.message || "Invalid or expired OTP.");
+      }
+    } catch (err) {
+      setAuthError(err.message || "Network error. Please try again.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSendRegisterOtp = async () => {
+    setAuthError(null);
+    setAuthSuccess(null);
+    if (!authName.trim()) {
+      setAuthError("Please enter your full name.");
+      return;
+    }
+    if (!authEmail.trim()) {
+      setAuthError("Please enter your email address.");
+      return;
+    }
+    if (!authPhone.trim() || authPhone.trim().length < 10) {
+      setAuthError("Please enter a valid 10-digit phone number.");
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const res = await fetch(buildUrl("/api/auth/register"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: authName.trim(),
+          email: authEmail.trim(),
+          phone: authPhone.trim(),
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok) {
+        setAuthOtpSent(true);
+        setAuthCooldown(30);
+        setAuthSuccess(data?.message || "OTP sent to your email!");
+      } else {
+        if (/already registered|already exists/i.test(data?.message || "")) {
+          setAuthError("This email or phone is already registered. Please switch to Login.");
+          setAuthTab("login");
+        } else {
+          setAuthError(data?.message || "Failed to send OTP.");
+        }
+      }
+    } catch (err) {
+      setAuthError(err.message || "Network error. Please try again.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleVerifyRegisterOtp = async () => {
+    setAuthError(null);
+    setAuthSuccess(null);
+    if (!authOtp.trim()) {
+      setAuthError("Please enter the 6-digit OTP.");
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const res = await fetch(buildUrl("/api/auth/register/verify"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: authName.trim(),
+          email: authEmail.trim(),
+          phone: authPhone.trim(),
+          otp: authOtp.trim(),
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.token) {
+        localStorage.setItem("token", data.token);
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+        setAuthOtpSent(false);
+        setAuthOtp("");
+        setAuthSuccess("Registration successful!");
+        setActive("Appointments");
+        await loadProfile();
+      } else {
+        setAuthError(data?.message || "Invalid or expired OTP.");
+      }
+    } catch (err) {
+      setAuthError(err.message || "Network error. Please try again.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (location.pathname.includes("profile/edit")) {
+      handleStartEdit();
+      navigate("/user-profile", { replace: true });
+    }
+  }, [location.pathname]);
+
 
   const [activeSession, setActiveSession] = useState(null);
   const userNotifiedRef = useRef(false);
@@ -244,14 +472,19 @@ export default function UserProfile({ apiBase = "/api" }) {
   async function loadProfile() {
     setLoading(true);
     const token = localStorage.getItem("token");
+    if (!token) {
+      setProfile(null);
+      setLoading(false);
+      return;
+    }
     try {
       const res = await fetch(buildUrl(`${apiBase}/profile/me`), {
         headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
       const json = await res.json().catch(() => null);
       console.log("loadProfile: appointments raw:", json?.data?.appointments);
-      if (json?.success) {
-        const data = json.data || {};
+      if (json?.success && json?.data) {
+        const data = json.data;
         setProfile({
           name: data.name || "User",
           email: data.email || "",
@@ -263,12 +496,18 @@ export default function UserProfile({ apiBase = "/api" }) {
           })),
           recentTransactions: data.recentTransactions || [],
         });
+        setEditForm({
+          name: data.name || "",
+          email: data.email || "",
+          phone: data.phone || "",
+        });
       } else {
-        setProfile({ name: "User", email: "", phone: "", wallet: null, appointments: [], recentTransactions: [] });
+        localStorage.removeItem("token");
+        setProfile(null);
       }
     } catch (err) {
       console.error("loadProfile error", err);
-      setProfile({ name: "User", email: "", phone: "", wallet: null, appointments: [], recentTransactions: [] });
+      setProfile(null);
     } finally {
       setLoading(false);
     }
@@ -276,7 +515,14 @@ export default function UserProfile({ apiBase = "/api" }) {
 
   function signOut() {
     localStorage.removeItem("token");
-    navigate("/");
+    localStorage.removeItem("user");
+    setProfile(null);
+    setIsEditing(false);
+    setAuthOtpSent(false);
+    setAuthOtp("");
+    setAuthError(null);
+    setAuthSuccess(null);
+    setActive("Login");
   }
 
   function decodeJwtPayload(token) {
@@ -850,47 +1096,56 @@ export default function UserProfile({ apiBase = "/api" }) {
   };
 
   if (loading) return <TopCenter>Loading…</TopCenter>;
-  if (!profile) return <TopCenter>No profile found.</TopCenter>;
+  const isLoggedIn = Boolean(profile);
 
   return (
     <Page>
       <Header>
-        <Brand>Shaadi Undo</Brand>
+        <Brand onClick={() => navigate("/")} style={{ cursor: "pointer" }}>Shaadi Undo</Brand>
 
         <HeaderRight>
-          <DropWrap
-            onClick={(e) => {
-              e.stopPropagation();
-              setDropdownOpen(!dropdownOpen);
-            }}
-          >
-            <AvatarSmall>{profile.name[0]?.toUpperCase()}</AvatarSmall>
+          {isLoggedIn ? (
+            <DropWrap
+              onClick={(e) => {
+                e.stopPropagation();
+                setDropdownOpen(!dropdownOpen);
+              }}
+            >
+              <AvatarSmall>{(profile?.name || "U")[0]?.toUpperCase()}</AvatarSmall>
 
-            {dropdownOpen && (
-              <Dropdown>
-                <DropHeader>
-                  <strong>{profile.name}</strong>
-                  <div style={{ color: theme.muted, fontSize: 13 }}>{profile.email}</div>
-                </DropHeader>
+              {dropdownOpen && (
+                <Dropdown>
+                  <DropHeader>
+                    <strong>{profile?.name}</strong>
+                    <div style={{ color: theme.muted, fontSize: 13 }}>{profile?.email}</div>
+                  </DropHeader>
 
-                <DropLinks>
-                  <DropLink to="/user-profile" onClick={() => setActive("Profile")}>
-                    Profile
-                  </DropLink>
-                  <DropLink to="/user-profile" onClick={() => setActive("Appointments")}>
-                    Appointments
-                  </DropLink>
-                  <DropLink to="/user-profile" onClick={() => setActive("Wallet")}>
-                    Wallet
-                  </DropLink>
-                  <DropLink to="/user-profile" onClick={() => setActive("Transactions")}>
-                    Transactions
-                  </DropLink>
-                  <DropBtn onClick={signOut}>Logout</DropBtn>
-                </DropLinks>
-              </Dropdown>
-            )}
-          </DropWrap>
+                  <DropLinks>
+                    <DropLink to="/user-profile" onClick={() => setActive("Profile")}>
+                      Profile
+                    </DropLink>
+                    <DropLink to="/user-profile" onClick={() => setActive("Appointments")}>
+                      Appointments
+                    </DropLink>
+                    <DropLink to="/user-profile" onClick={() => setActive("Wallet")}>
+                      Wallet
+                    </DropLink>
+                    <DropLink to="/user-profile" onClick={() => setActive("Transactions")}>
+                      Transactions
+                    </DropLink>
+                    <DropBtn onClick={signOut}>Logout</DropBtn>
+                  </DropLinks>
+                </Dropdown>
+              )}
+            </DropWrap>
+          ) : (
+            <ActionBtn
+              onClick={() => { setActive("Login"); setAuthTab("login"); }}
+              style={{ padding: "8px 18px", fontSize: 14 }}
+            >
+              🔑 Sign In
+            </ActionBtn>
+          )}
         </HeaderRight>
       </Header>
 
@@ -898,34 +1153,45 @@ export default function UserProfile({ apiBase = "/api" }) {
         <LeftCol>
           <LeftCard>
             <LeftRow>
-              <AvatarLarge>{profile.name[0]?.toUpperCase()}</AvatarLarge>
+              <AvatarLarge style={{ background: isLoggedIn ? "#fdf4ec" : "#f3f4f6", color: isLoggedIn ? "#8e6241" : "#6b7280" }}>
+                {isLoggedIn ? (profile?.name || "U")[0]?.toUpperCase() : "👤"}
+              </AvatarLarge>
               <div>
-                <Name>{profile.name}</Name>
-                <Muted>{profile.email}</Muted>
-                {profile.phone && <Muted>{profile.phone}</Muted>}
+                <Name>{isLoggedIn ? profile?.name : "Guest User"}</Name>
+                <Muted>{isLoggedIn ? profile?.email : "Not signed in"}</Muted>
+                {isLoggedIn && profile?.phone && <Muted>{profile?.phone}</Muted>}
               </div>
             </LeftRow>
 
             <LeftActions>
-              <ActionBtn onClick={() => navigate("profile/edit")}>Edit Profile</ActionBtn>
-              <ActionBtnOutline onClick={signOut}>Sign out</ActionBtnOutline>
+              {isLoggedIn ? (
+                <>
+                  <ActionBtn onClick={handleStartEdit}>Edit Profile</ActionBtn>
+                  <ActionBtnOutline onClick={signOut}>Sign out</ActionBtnOutline>
+                </>
+              ) : (
+                <ActionBtn
+                  style={{ width: "100%", justifyContent: "center" }}
+                  onClick={() => { setActive("Login"); }}
+                >
+                  🔑 Sign In / Register
+                </ActionBtn>
+              )}
             </LeftActions>
           </LeftCard>
 
           <WalletPanel>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <FaWallet size={20} />
+              <FaWallet size={20} style={{ color: "#ba8d6c" }} />
               <WalletTitle>Wallet</WalletTitle>
             </div>
 
-            {profile.wallet ? (
+            {isLoggedIn && profile?.wallet ? (
               <div style={{ marginTop: 12 }}>
                 <div>
                   <SmallMuted>Available Balance</SmallMuted>
                   <BigBalance style={{ marginTop: 6, color: theme.primary }}>{formatCurrency(profile.wallet.balance)}</BigBalance>
                 </div>
-
-
 
                 <div style={{ marginTop: 12 }}>
                   <ViewWallet onClick={() => setActive("Wallet")}>View Details</ViewWallet>
@@ -933,46 +1199,628 @@ export default function UserProfile({ apiBase = "/api" }) {
               </div>
             ) : (
               <div style={{ marginTop: 12 }}>
-                <SmallMuted>No wallet found.</SmallMuted>
+                <SmallMuted>{isLoggedIn ? "No wallet found." : "Sign in to view wallet & balance."}</SmallMuted>
                 <div style={{ marginTop: 8 }}>
-                  <PrimaryBtn
-                    style={{ padding: "6px 14px", fontSize: 13, fontWeight: 700 }}
-                    onClick={() => setShowTopup(true)}
-                  >
-                    Add Money
-                  </PrimaryBtn>
+                  {isLoggedIn ? (
+                    <PrimaryBtn
+                      style={{ padding: "6px 14px", fontSize: 13, fontWeight: 700 }}
+                      onClick={() => setShowTopup(true)}
+                    >
+                      Add Money
+                    </PrimaryBtn>
+                  ) : (
+                    <PrimaryBtn
+                      style={{ padding: "6px 14px", fontSize: 13, fontWeight: 700 }}
+                      onClick={() => { setActive("Login"); }}
+                    >
+                      Sign In
+                    </PrimaryBtn>
+                  )}
                 </div>
               </div>
             )}
           </WalletPanel>
 
           <LeftNav>
-            {["Profile", "Appointments", "Wallet", "Transactions"].map((label) => (
-              <NavItem key={label} active={active === label} onClick={() => setActive(label)}>
-                {label}
-              </NavItem>
-            ))}
+            {(isLoggedIn ? ["Profile", "Appointments", "Wallet", "Transactions"] : ["Sign In / Register", "Appointments", "Profile", "Wallet"]).map((label) => {
+              const isItemActive = (label === "Sign In / Register" && active === "Login") || active === label;
+              return (
+                <NavItem
+                  key={label}
+                  active={isItemActive}
+                  onClick={() => {
+                    if (label === "Sign In / Register") {
+                      setActive("Login");
+                    } else if (!isLoggedIn) {
+                      setActive("Login");
+                    } else {
+                      setActive(label);
+                      setIsEditing(false);
+                    }
+                  }}
+                >
+                  {label}
+                </NavItem>
+              );
+            })}
           </LeftNav>
         </LeftCol>
 
         <RightCol>
           <RightCard>
-            {active === "Profile" && (
+            {!isLoggedIn || active === "Login" ? (
+              <AuthCardContainer>
+                {active !== "Login" && !isLoggedIn && (
+                  <div style={{ background: "#fdf8f4", border: "1.5px solid #e7d8cc", borderRadius: 8, padding: "12px 18px", color: "#8e6241", fontWeight: 600, fontSize: 14 }}>
+                    🔒 Please sign in to view your <strong>{active}</strong>.
+                  </div>
+                )}
+                <AuthTabsHeader>
+                  <AuthTabBtn
+                    $active={authTab === "login"}
+                    onClick={() => { setAuthTab("login"); setAuthOtpSent(false); setAuthError(null); setAuthSuccess(null); }}
+                  >
+                    🔑 Login (Existing User)
+                  </AuthTabBtn>
+                  <AuthTabBtn
+                    $active={authTab === "register"}
+                    onClick={() => { setAuthTab("register"); setAuthOtpSent(false); setAuthError(null); setAuthSuccess(null); }}
+                  >
+                    📝 Register (New User)
+                  </AuthTabBtn>
+                </AuthTabsHeader>
+
+                {authTab === "login" ? (
+                  <AuthFormWrapper>
+                    <H2>Sign In with OTP</H2>
+                    <div style={{ color: "#6b7280", fontSize: 14, marginBottom: 20 }}>
+                      Apna registered email address enter karein. Hum aapko login karne ke liye 6-digit OTP bhejenge.
+                    </div>
+
+                    {authError && (
+                      <div style={{ color: "#b91c1c", background: "#fef2f2", border: "1px solid #fecaca", padding: "12px 16px", borderRadius: 8, fontSize: 14, marginBottom: 16 }}>
+                        ⚠️ {authError}
+                      </div>
+                    )}
+                    {authSuccess && (
+                      <div style={{ color: "#15803d", background: "#f0fdf4", border: "1px solid #bbf7d0", padding: "12px 16px", borderRadius: 8, fontSize: 14, marginBottom: 16 }}>
+                        ✅ {authSuccess}
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 440 }}>
+                      <div>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 6 }}>
+                          Registered Email Address
+                        </label>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input
+                            type="email"
+                            placeholder="Enter your email (e.g. ahaadmail7065@gmail.com)"
+                            value={authEmail}
+                            onChange={(e) => setAuthEmail(e.target.value)}
+                            disabled={authOtpSent || authLoading}
+                            style={{
+                              flex: 1,
+                              padding: "10px 14px",
+                              borderRadius: 8,
+                              border: "1.5px solid #d1d5db",
+                              background: "#ffffff",
+                              color: "#111827",
+                              WebkitTextFillColor: "#111827",
+                              fontSize: 15,
+                              outline: "none",
+                            }}
+                          />
+                          {!authOtpSent && (
+                            <button
+                              type="button"
+                              onClick={handleSendLoginOtp}
+                              disabled={authLoading || authCooldown > 0}
+                              style={{
+                                background: authCooldown > 0 ? "#9ca3af" : "#ba8d6c",
+                                color: "#ffffff",
+                                border: "none",
+                                padding: "10px 18px",
+                                borderRadius: 8,
+                                fontWeight: 700,
+                                fontSize: 14,
+                                cursor: authCooldown > 0 ? "not-allowed" : "pointer",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {authLoading ? "Sending..." : authCooldown > 0 ? `Wait ${authCooldown}s` : "GET OTP"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {authOtpSent && (
+                        <div>
+                          <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 6 }}>
+                            Enter 6-Digit OTP sent to your email
+                          </label>
+                          <input
+                            type="text"
+                            maxLength={6}
+                            placeholder="Enter 6-digit OTP"
+                            value={authOtp}
+                            onChange={(e) => setAuthOtp(e.target.value)}
+                            style={{
+                              width: "100%",
+                              padding: "12px 14px",
+                              borderRadius: 8,
+                              border: "2px solid #ba8d6c",
+                              background: "#ffffff",
+                              color: "#111827",
+                              WebkitTextFillColor: "#111827",
+                              fontSize: 18,
+                              fontWeight: 700,
+                              letterSpacing: 4,
+                              boxSizing: "border-box",
+                              outline: "none",
+                              marginBottom: 12,
+                            }}
+                          />
+
+                          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                            <button
+                              type="button"
+                              onClick={handleVerifyLoginOtp}
+                              disabled={authLoading}
+                              style={{
+                                background: "#ba8d6c",
+                                color: "#ffffff",
+                                border: "none",
+                                padding: "11px 22px",
+                                borderRadius: 8,
+                                fontWeight: 700,
+                                fontSize: 14,
+                                cursor: "pointer",
+                              }}
+                            >
+                              {authLoading ? "Verifying..." : "Verify OTP & Continue"}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={handleSendLoginOtp}
+                              disabled={authLoading || authCooldown > 0}
+                              style={{
+                                background: "#ffffff",
+                                color: "#374151",
+                                border: "1.5px solid #d1d5db",
+                                padding: "11px 16px",
+                                borderRadius: 8,
+                                fontWeight: 600,
+                                fontSize: 14,
+                                cursor: authCooldown > 0 ? "not-allowed" : "pointer",
+                              }}
+                            >
+                              {authCooldown > 0 ? `Resend (${authCooldown}s)` : "Resend OTP"}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => { setAuthOtpSent(false); setAuthOtp(""); setAuthError(null); }}
+                              style={{
+                                background: "transparent",
+                                color: "#6b7280",
+                                border: "none",
+                                padding: "11px 12px",
+                                fontSize: 14,
+                                cursor: "pointer",
+                                textDecoration: "underline",
+                              }}
+                            >
+                              Change Email
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </AuthFormWrapper>
+                ) : (
+                  <AuthFormWrapper>
+                    <H2>Register (New User)</H2>
+                    <div style={{ color: "#6b7280", fontSize: 14, marginBottom: 20 }}>
+                      Apna naam, email aur phone number enter karein account create karne ke liye.
+                    </div>
+
+                    {authError && (
+                      <div style={{ color: "#b91c1c", background: "#fef2f2", border: "1px solid #fecaca", padding: "12px 16px", borderRadius: 8, fontSize: 14, marginBottom: 16 }}>
+                        ⚠️ {authError}
+                      </div>
+                    )}
+                    {authSuccess && (
+                      <div style={{ color: "#15803d", background: "#f0fdf4", border: "1px solid #bbf7d0", padding: "12px 16px", borderRadius: 8, fontSize: 14, marginBottom: 16 }}>
+                        ✅ {authSuccess}
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 440 }}>
+                      <div>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 6 }}>
+                          Full Name
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Your Name"
+                          value={authName}
+                          onChange={(e) => setAuthName(e.target.value)}
+                          disabled={authOtpSent || authLoading}
+                          style={{
+                            width: "100%",
+                            padding: "10px 14px",
+                            borderRadius: 8,
+                            border: "1.5px solid #d1d5db",
+                            background: "#ffffff",
+                            color: "#111827",
+                            WebkitTextFillColor: "#111827",
+                            fontSize: 15,
+                            boxSizing: "border-box",
+                            outline: "none",
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 6 }}>
+                          Email Address
+                        </label>
+                        <input
+                          type="email"
+                          placeholder="name@example.com"
+                          value={authEmail}
+                          onChange={(e) => setAuthEmail(e.target.value)}
+                          disabled={authOtpSent || authLoading}
+                          style={{
+                            width: "100%",
+                            padding: "10px 14px",
+                            borderRadius: 8,
+                            border: "1.5px solid #d1d5db",
+                            background: "#ffffff",
+                            color: "#111827",
+                            WebkitTextFillColor: "#111827",
+                            fontSize: 15,
+                            boxSizing: "border-box",
+                            outline: "none",
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 6 }}>
+                          Phone Number (Required)
+                        </label>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input
+                            type="tel"
+                            placeholder="10-digit mobile number"
+                            value={authPhone}
+                            onChange={(e) => setAuthPhone(e.target.value)}
+                            disabled={authOtpSent || authLoading}
+                            style={{
+                              flex: 1,
+                              padding: "10px 14px",
+                              borderRadius: 8,
+                              border: "1.5px solid #d1d5db",
+                              background: "#ffffff",
+                              color: "#111827",
+                              WebkitTextFillColor: "#111827",
+                              fontSize: 15,
+                              outline: "none",
+                            }}
+                          />
+                          {!authOtpSent && (
+                            <button
+                              type="button"
+                              onClick={handleSendRegisterOtp}
+                              disabled={authLoading || authCooldown > 0}
+                              style={{
+                                background: authCooldown > 0 ? "#9ca3af" : "#ba8d6c",
+                                color: "#ffffff",
+                                border: "none",
+                                padding: "10px 18px",
+                                borderRadius: 8,
+                                fontWeight: 700,
+                                fontSize: 14,
+                                cursor: authCooldown > 0 ? "not-allowed" : "pointer",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {authLoading ? "Sending..." : authCooldown > 0 ? `Wait ${authCooldown}s` : "GET OTP"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {authOtpSent && (
+                        <div>
+                          <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 6 }}>
+                            Enter 6-Digit OTP sent to your email
+                          </label>
+                          <input
+                            type="text"
+                            maxLength={6}
+                            placeholder="Enter 6-digit OTP"
+                            value={authOtp}
+                            onChange={(e) => setAuthOtp(e.target.value)}
+                            style={{
+                              width: "100%",
+                              padding: "12px 14px",
+                              borderRadius: 8,
+                              border: "2px solid #ba8d6c",
+                              background: "#ffffff",
+                              color: "#111827",
+                              WebkitTextFillColor: "#111827",
+                              fontSize: 18,
+                              fontWeight: 700,
+                              letterSpacing: 4,
+                              boxSizing: "border-box",
+                              outline: "none",
+                              marginBottom: 12,
+                            }}
+                          />
+
+                          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                            <button
+                              type="button"
+                              onClick={handleVerifyRegisterOtp}
+                              disabled={authLoading}
+                              style={{
+                                background: "#ba8d6c",
+                                color: "#ffffff",
+                                border: "none",
+                                padding: "11px 22px",
+                                borderRadius: 8,
+                                fontWeight: 700,
+                                fontSize: 14,
+                                cursor: "pointer",
+                              }}
+                            >
+                              {authLoading ? "Verifying..." : "Verify OTP & Continue"}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={handleSendRegisterOtp}
+                              disabled={authLoading || authCooldown > 0}
+                              style={{
+                                background: "#ffffff",
+                                color: "#374151",
+                                border: "1.5px solid #d1d5db",
+                                padding: "11px 16px",
+                                borderRadius: 8,
+                                fontWeight: 600,
+                                fontSize: 14,
+                                cursor: authCooldown > 0 ? "not-allowed" : "pointer",
+                              }}
+                            >
+                              {authCooldown > 0 ? `Resend (${authCooldown}s)` : "Resend OTP"}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => { setAuthOtpSent(false); setAuthOtp(""); setAuthError(null); }}
+                              style={{
+                                background: "transparent",
+                                color: "#6b7280",
+                                border: "none",
+                                padding: "11px 12px",
+                                fontSize: 14,
+                                cursor: "pointer",
+                                textDecoration: "underline",
+                              }}
+                            >
+                              Change Details
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </AuthFormWrapper>
+                )}
+              </AuthCardContainer>
+            ) : (
               <>
-                <H2>Profile</H2>
-                <Section>
-                  <Row>
-                    <div>
-                      <SmallMuted>Name</SmallMuted>
-                      <div style={{ fontWeight: 700 }}>{profile.name}</div>
+            {active === "Profile" && (
+              isEditing ? (
+                <>
+                  <H2>Edit Profile Details</H2>
+                  <div style={{ color: "#6b7280", fontSize: 14, marginBottom: 20 }}>
+                    Apni personal details update karke Save Changes par click karein.
+                  </div>
+                  <Section>
+                    <form onSubmit={handleSaveEdit}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 480 }}>
+                        <div>
+                          <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 6 }}>
+                            Full Name
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.name}
+                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                            required
+                            style={{
+                              width: "100%",
+                              padding: "10px 14px",
+                              borderRadius: 8,
+                              border: "1.5px solid #d1d5db",
+                              background: "#ffffff",
+                              backgroundColor: "#ffffff",
+                              color: "#111827",
+                              WebkitTextFillColor: "#111827",
+                              fontSize: 15,
+                              boxSizing: "border-box",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 6 }}>
+                            Email Address <span style={{ fontSize: 12, fontWeight: 400, color: "#9ca3af" }}>(Cannot be changed)</span>
+                          </label>
+                          <input
+                            type="email"
+                            value={editForm.email}
+                            disabled
+                            readOnly
+                            style={{
+                              width: "100%",
+                              padding: "10px 14px",
+                              borderRadius: 8,
+                              border: "1.5px solid #e5e7eb",
+                              background: "#f3f4f6",
+                              backgroundColor: "#f3f4f6",
+                              color: "#6b7280",
+                              WebkitTextFillColor: "#6b7280",
+                              fontSize: 15,
+                              boxSizing: "border-box",
+                              outline: "none",
+                              cursor: "not-allowed",
+                            }}
+                          />
+                          <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 4 }}>
+                            🔒 Email address is linked to your account and cannot be modified.
+                          </div>
+                        </div>
+
+                        <div>
+                          <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 6 }}>
+                            Phone Number
+                          </label>
+                          <input
+                            type="tel"
+                            value={editForm.phone}
+                            onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                            style={{
+                              width: "100%",
+                              padding: "10px 14px",
+                              borderRadius: 8,
+                              border: "1.5px solid #d1d5db",
+                              background: "#ffffff",
+                              backgroundColor: "#ffffff",
+                              color: "#111827",
+                              WebkitTextFillColor: "#111827",
+                              fontSize: 15,
+                              boxSizing: "border-box",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
+
+                        {editError && (
+                          <div style={{ color: "#dc2626", background: "#fef2f2", border: "1px solid #fecaca", padding: "10px 14px", borderRadius: 8, fontSize: 14 }}>
+                            {editError}
+                          </div>
+                        )}
+
+                        <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                          <button
+                            type="submit"
+                            disabled={editSaving}
+                            style={{
+                              background: "#ba8d6c",
+                              color: "#ffffff",
+                              border: "none",
+                              padding: "11px 24px",
+                              borderRadius: 8,
+                              fontWeight: 700,
+                              fontSize: 14,
+                              cursor: "pointer",
+                              boxShadow: "0 2px 6px rgba(186,141,108,0.3)",
+                            }}
+                          >
+                            {editSaving ? "Saving..." : "Save Changes"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setIsEditing(false); setEditError(null); }}
+                            style={{
+                              background: "#ffffff",
+                              color: "#374151",
+                              border: "1.5px solid #d1d5db",
+                              padding: "11px 20px",
+                              borderRadius: 8,
+                              fontWeight: 600,
+                              fontSize: 14,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  </Section>
+                </>
+              ) : (
+                <>
+                  <H2>Profile Details</H2>
+                  <div style={{ color: "#6b7280", fontSize: 14, marginBottom: 20 }}>
+                    Manage your personal details and account information.
+                  </div>
+                  <Section>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                        gap: 20,
+                        background: "#fdf8f4",
+                        border: "1px solid #f3e8df",
+                        borderRadius: 12,
+                        padding: "20px 24px",
+                      }}
+                    >
+                      <div>
+                        <SmallMuted>Full Name</SmallMuted>
+                        <div style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>
+                          {profile.name || "—"}
+                        </div>
+                      </div>
+                      <div>
+                        <SmallMuted>Email Address</SmallMuted>
+                        <div style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>
+                          {profile.email || "—"}
+                        </div>
+                      </div>
+                      <div>
+                        <SmallMuted>Phone Number</SmallMuted>
+                        <div style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>
+                          {profile.phone || "—"}
+                        </div>
+                      </div>
+                      <div>
+                        <SmallMuted>Account Type</SmallMuted>
+                        <div style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>
+                          Client / User
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <SmallMuted>Email</SmallMuted>
-                      <div>{profile.email || "-"}</div>
+
+                    <div style={{ marginTop: 24 }}>
+                      <ActionBtn
+                        onClick={handleStartEdit}
+                        style={{
+                          background: "#ba8d6c",
+                          color: "#ffffff !important",
+                          border: "none",
+                          padding: "10px 22px",
+                          fontWeight: 700,
+                          fontSize: 14,
+                          borderRadius: 10,
+                          boxShadow: "0 2px 8px rgba(186,141,108,0.3)",
+                        }}
+                      >
+                        ✏️ Edit Profile Details
+                      </ActionBtn>
                     </div>
-                  </Row>
-                </Section>
-              </>
+                  </Section>
+                </>
+              )
             )}
 
             {active === "Appointments" && (
@@ -1187,7 +2035,8 @@ export default function UserProfile({ apiBase = "/api" }) {
                         meetingUrl={activeSession.meetingUrl}
                         token={typeof activeSession.token === "string" && activeSession.token.trim() !== "" ? activeSession.token : undefined}
                         mode={activeSession.mode}
-                        parentStyle={{ height: "100%", width: "100%" }}
+                        height="min(75vh, 650px)"
+                        autoJoin={true}
                         role={activeSession.role || "user"}
                         permissions={activeSession.permissions || {}}
                         user={{ name: profile?.name || "User" }}
@@ -1217,13 +2066,13 @@ export default function UserProfile({ apiBase = "/api" }) {
                 </div>
               </div>
             )}
+              </>
+            )}
           </RightCard>
         </RightCol>
       </Main>
 
-      <Routes>
-        <Route path="profile/edit" element={<EditProfile apiBase={apiBase} />} />
-      </Routes>
+      
 
       {showExtendModal && activeSession && (
         <ModalOverlay
@@ -1644,115 +2493,167 @@ const LeftRow = styled.div`
 `;
 
 const AvatarLarge = styled.div`
-  width: 64px;
-  height: 64px;
-  border-radius: 12px;
-  background: #e0f2fe;
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  background: #fdf4ec;
+  color: #8e6241 !important;
+  border: 1.5px solid #fed7aa;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 24px;
+  font-size: 26px;
+  box-shadow: 0 4px 12px rgba(186,141,108,0.15);
 `;
 
 const Name = styled.div`
   font-weight: 800;
-  font-size: 18px;
+  font-size: 19px;
+  color: #111827 !important;
+  line-height: 1.2;
 `;
 
 const SmallMuted = styled.div`
   font-size: 13px;
-  color: ${theme.muted};
+  color: #4b5563 !important;
+  margin-top: 4px;
+  word-break: break-all;
 `;
 
 const Muted = styled.div`
   font-size: 13px;
-  color: ${theme.muted};
+  color: #6b7280 !important;
+  margin-top: 2px;
 `;
 
 const LeftActions = styled.div`
   margin-top: 16px;
   display: flex;
-  gap: 8px;
+  gap: 10px;
 `;
 
 const ActionBtn = styled.button`
-  padding: 8px 12px;
+  padding: 8px 16px;
   border-radius: 8px;
-  border: 1px solid ${theme.border};
-  background: #fff;
+  border: 1.5px solid #d1d5db;
+  background: #ffffff;
+  color: #1f2937 !important;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  &:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+    color: #111827 !important;
+  }
 `;
 
 const ActionBtnOutline = styled(ActionBtn)`
-  color: ${theme.danger};
+  color: #dc2626 !important;
+  border-color: #fecaca;
+  background: #fef2f2;
+  &:hover {
+    background: #fee2e2;
+    border-color: #f87171;
+    color: #b91c1c !important;
+  }
 `;
 
 const WalletPanel = styled.div`
   background: ${theme.card};
   border-radius: 12px;
-  border: 1px solid ${theme.border};
+  border: 1px solid #e5e7eb;
   padding: 16px;
-  margin-top: 12px;
+  margin-top: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 `;
 
 const WalletTitle = styled.div`
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 16px;
+  color: #111827 !important;
 `;
 
 const ViewWallet = styled.button`
-  margin-top: 8px;
-  padding: 8px 12px;
+  margin-top: 10px;
+  padding: 8px 18px;
   border-radius: 8px;
-  border: 1px solid ${theme.primary};
-  background: ${theme.primary};
-  color: #fff;
+  border: none;
+  background: #ba8d6c;
+  color: #ffffff !important;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(186,141,108,0.3);
+  transition: all 0.2s ease;
+  &:hover {
+    background: #a87958;
+  }
 `;
 
 const BigBalance = styled.div`
-  font-weight: 800;
-  font-size: 20px;
+  font-weight: 900;
+  font-size: 24px;
+  color: #111827 !important;
 `;
 
 const LeftNav = styled.nav`
-  margin-top: 12px;
-  border-radius: 8px;
-  border: 1px solid ${theme.border};
+  margin-top: 14px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
   background: #ffffff;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 `;
 
 const NavItem = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== "active",
 })`
-  padding: 16px 18px;
+  padding: 14px 18px;
   font-size: 15px;
   cursor: pointer;
-  background: ${(p) => (p.active ? "#e8f5ff" : "#ffffff")};
-  color: ${(p) => (p.active ? theme.primary : "#1e293b")};
-  border-left: ${(p) => (p.active ? `4px solid ${theme.primary}` : "4px solid transparent")};
-  font-weight: ${(p) => (p.active ? 700 : 500)};
+  background: ${(p) => (p.active ? "#fdf8f4" : "#ffffff")};
+  color: ${(p) => (p.active ? "#8e6241" : "#4b5563")} !important;
+  border-left: ${(p) => (p.active ? "4px solid #ba8d6c" : "4px solid transparent")};
+  font-weight: ${(p) => (p.active ? 800 : 500)};
+  transition: all 0.15s ease;
+  &:hover {
+    background: ${(p) => (p.active ? "#fdf8f4" : "#f9fafb")};
+    color: ${(p) => (p.active ? "#8e6241" : "#111827")} !important;
+  }
 `;
 
 const RightCol = styled.section``;
 
 const RightCard = styled.div`
   background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid ${theme.border};
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
   padding: 32px;
   width: 100%;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.03);
 
   @media (max-width: 768px) {
-    padding: 22px;
+    padding: 20px;
   }
 `;
 
 const H2 = styled.h2`
   margin-top: 0;
+  color: #111827 !important;
+  font-weight: 800;
+  font-size: 24px;
 `;
 
 const Section = styled.div`
   padding: 12px 0;
+  color: #1f2937;
 `;
 
 const Row = styled.div`
@@ -1866,4 +2767,40 @@ const ModalContent = styled.div`
   background: white;
   padding: 18px;
   border-radius: 10px;
+`;
+
+const AuthCardContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const AuthTabsHeader = styled.div`
+  display: flex;
+  gap: 12px;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+`;
+
+const AuthTabBtn = styled.button`
+  background: ${({ $active }) => ($active ? "#ba8d6c" : "#f3f4f6")} !important;
+  color: ${({ $active }) => ($active ? "#ffffff" : "#4b5563")} !important;
+  border: 1.5px solid ${({ $active }) => ($active ? "#ba8d6c" : "#d1d5db")} !important;
+  padding: 10px 22px !important;
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+
+  &:hover {
+    background: ${({ $active }) => ($active ? "#ba8d6c" : "#e5e7eb")} !important;
+  }
+`;
+
+const AuthFormWrapper = styled.div`
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 8px 0;
 `;

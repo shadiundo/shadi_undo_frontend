@@ -32,6 +32,7 @@ const ProfessionalLayout = () => {
   const applyTheme = (mode) => {
     document.body.setAttribute("data-layout-mode", mode);
     document.body.classList.toggle("dark-mode", mode === "dark");
+    document.documentElement.setAttribute("data-bs-theme", mode);
     try {
       localStorage.setItem("data-layout-mode", mode);
     } catch { }
@@ -173,8 +174,26 @@ const ProfessionalLayout = () => {
           --glass-bg: rgba(22, 27, 34, 0.85);
         }
 
-        .pro-layout { display: flex; min-height: 100vh; }
-        .pro-main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
+        .pro-layout { display: flex; min-height: 100vh; background-color: #FDFCFB; }
+        .pro-main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; background-color: #FDFCFB; }
+
+        .pro-main .card {
+          background-color: #ffffff !important;
+          border: 1px solid #E8ECEF !important;
+          color: #1A202C !important;
+          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04) !important;
+          border-radius: 14px !important;
+        }
+
+        .pro-main .card-title,
+        .pro-main h1, .pro-main h2, .pro-main h3, .pro-main h4, .pro-main h5, .pro-main h6 {
+          color: #1A202C !important;
+          font-family: var(--font-main);
+        }
+
+        .pro-main .text-muted {
+          color: #64748B !important;
+        }
 
         /* --- Sidebar Styling --- */
         .pro-sidebar {

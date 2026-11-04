@@ -10,7 +10,7 @@ const useLayoutContext = () => {
   }
   return context;
 };
-const getPreferredTheme = () => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+const getPreferredTheme = () => 'light';
 const LayoutProvider = ({
   children
 }) => {
@@ -27,6 +27,13 @@ const LayoutProvider = ({
     }
   };
   const [settings, setSettings] = useLocalStorage('__REBACK_NEXT_CONFIG__', INIT_STATE,override);
+
+  // Force light theme by default for ShaadiUndo
+  useEffect(() => {
+    if (settings.theme === 'dark') {
+      setSettings(prev => ({ ...prev, theme: 'light' }));
+    }
+  }, [settings.theme]);
   const [offcanvasStates, setOffcanvasStates] = useState({
     showThemeCustomizer: false,
     showActivityStream: false,
