@@ -696,6 +696,62 @@ function RecentAppointments() {
     }
   }, [appointments, setActiveCallInternal, doPostAction, reportParticipantsToServer]);
 
+  const rejoinAppointment = useCallback(async (id) => {
+    setActionLoadingId(id);
+    try {
+      const sessionResp = await doFetch(`/api/appointments/${id}/start-session`, {
+        method: "POST",
+        headers: { ...tokenHeader() },
+        attachToGlobalAbort: true,
+      });
+
+      const sessionBody = await parseJsonSafe(sessionResp);
+      if (!sessionResp.ok || !sessionBody || !sessionBody.success) {
+        throw new Error(sessionBody?.message || "Failed to rejoin session");
+      }
+
+      const data = sessionBody.data || {};
+      const roomName = data.roomName;
+      const token = data.token;
+
+      if (!roomName || !token) {
+        throw new Error("Server did not return roomName or token");
+      }
+
+      const apptRes = await doFetch(`/api/appointments/${id}`, { method: "GET", headers: { ...tokenHeader() } });
+      const apptBody = await parseJsonSafe(apptRes);
+      const appt = apptBody?.appointment;
+      const serverExpires = appt?.session?.expiresAt || (appt?.session?.expiresAtIso ? Date.parse(appt.session.expiresAtIso) : null);
+      const fallbackExpiresAt = Date.now() + 30 * 60 * 1000;
+      const expiresAt = serverExpires ? Number(serverExpires) : fallbackExpiresAt;
+      const minEndTime = Date.now() + 30 * 60 * 1000;
+
+      const newActive = {
+        id,
+        roomName,
+        token,
+        initialMinutes: 30,
+        expiresAt,
+        minEndTime,
+        countdownStarted: true,
+        twoMinutePromptShown: false,
+      };
+
+      prevParticipantsRef.current[id] = { count: 1, userJoined: false };
+      participantTrackingInitializedRef.current = false;
+      setActiveCallInternal(newActive);
+
+      socket.emit("professional-joined", { appointmentId: id });
+      await reportParticipantsToServer(id, { professionalJoined: true });
+
+    } catch (err) {
+      console.error("Rejoin appointment error:", err);
+      window.alert(err.message || "Failed to rejoin session");
+    } finally {
+      setActionLoadingId(null);
+    }
+  }, [doFetch, tokenHeader, setActiveCallInternal, reportParticipantsToServer]);
+
   const handleBothJoined = useCallback(async () => {
     if (!activeCall) return;
     const id = activeCall.id;
@@ -1410,14 +1466,18 @@ function RecentAppointments() {
               onCallEnd={() => {
                 if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
                 if (sessionFallbackTimerRef.current) clearTimeout(sessionFallbackTimerRef.current);
-                setActiveCallInternal(null);
-                setRemainingMs(null);
 
-                // Clear participant tracking for this session
+                // Notify user and server that professional disconnected
                 if (activeCall?.id) {
+                  socket.emit("professional-left", { appointmentId: activeCall.id });
+                  reportParticipantsToServer(activeCall.id, { professionalJoined: false });
                   delete prevParticipantsRef.current[activeCall.id];
                 }
+
+                setActiveCallInternal(null);
+                setRemainingMs(null);
                 participantTrackingInitializedRef.current = false;
+                fetchRecentAppointments();
               }}
               onConferenceFailed={(error) => {
                 console.error("Conference failed:", error);
@@ -1814,8 +1874,34 @@ function RecentAppointments() {
                       <div style={{
                         display: "flex",
                         gap: "10px",
-                        width: "100%"
+                        width: "100%",
+                        flexWrap: "wrap"
                       }}>
+                        {(!activeCall || activeCall.id !== id) && (
+                          <button
+                            onClick={() => rejoinAppointment(id)}
+                            style={{
+                              padding: "11px 20px",
+                              borderRadius: "8px",
+                              background: "#CAAA93",
+                              color: "#FFFFFF",
+                              border: "none",
+                              fontSize: "14px",
+                              width: "100%",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "8px",
+                              fontWeight: 700,
+                              boxShadow: "0 2px 8px rgba(202, 170, 147, 0.4)",
+                              transition: "all 0.2s ease"
+                            }}
+                          >
+                            <IconifyIcon icon="solar:videocamera-record-bold" style={{ fontSize: "18px" }} />
+                            Rejoin Call
+                          </button>
+                        )}
                         <button
                           onClick={() => extendAppointment(id)}
                           style={{

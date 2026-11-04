@@ -432,6 +432,9 @@ export default function UserProfile({ apiBase = "/api" }) {
 
   const [joining, setJoining] = useState(false);
   const [timer, setTimer] = useState({ minutes: 0, seconds: 0, totalSeconds: 0 });
+  const [isTimerPaused, setIsTimerPaused] = useState(false);
+  const isTimerPausedRef = useRef(false);
+  const remainingSecondsRef = useRef(0);
   const [showExtendModal, setShowExtendModal] = useState(false);
   const [extendPending, setExtendPending] = useState(false);
   const [extendError, setExtendError] = useState(null);
@@ -931,10 +934,43 @@ export default function UserProfile({ apiBase = "/api" }) {
     [pollSessionRoom, callJoinSession, postParticipants, activeSession]
   );
 
+  // 🔌 Socket listeners for Professional connection/disconnection
+  useEffect(() => {
+    if (!activeSession?.appointmentId) return;
+
+    socket.emit("join-session", {
+      appointmentId: activeSession.appointmentId,
+      role: "user"
+    });
+
+    const onProLeft = () => {
+      console.log("Socket: Professional disconnected -> Pausing timer");
+      setIsTimerPaused(true);
+      isTimerPausedRef.current = true;
+    };
+
+    const onProJoined = () => {
+      console.log("Socket: Professional rejoined -> Resuming timer");
+      setIsTimerPaused(false);
+      isTimerPausedRef.current = false;
+    };
+
+    socket.on("professional-left", onProLeft);
+    socket.on("professional-joined", onProJoined);
+
+    return () => {
+      socket.off("professional-left", onProLeft);
+      socket.off("professional-joined", onProJoined);
+    };
+  }, [activeSession?.appointmentId]);
+
   useEffect(() => {
     if (!activeSession || !activeSession.session) {
       clearInterval(countdownRef.current);
       setTimer({ minutes: 0, seconds: 0, totalSeconds: 0 });
+      remainingSecondsRef.current = 0;
+      setIsTimerPaused(false);
+      isTimerPausedRef.current = false;
       return;
     }
 
@@ -954,11 +990,18 @@ export default function UserProfile({ apiBase = "/api" }) {
     };
 
     const initial = computeSecondsLeft();
+    remainingSecondsRef.current = initial;
     setTimer({ minutes: Math.floor(initial / 60), seconds: initial % 60, totalSeconds: initial });
     clearInterval(countdownRef.current);
 
     countdownRef.current = setInterval(async () => {
-      const left = computeSecondsLeft();
+      // If professional disconnected early, FREEZE timer (do not decrement)
+      if (isTimerPausedRef.current) {
+        return;
+      }
+
+      remainingSecondsRef.current = Math.max(0, remainingSecondsRef.current - 1);
+      const left = remainingSecondsRef.current;
       setTimer({ minutes: Math.floor(left / 60), seconds: left % 60, totalSeconds: left });
 
       if (left <= 300 && left > 0) {
@@ -980,6 +1023,18 @@ export default function UserProfile({ apiBase = "/api" }) {
 
   const handleParticipantsUpdate = async (count, participants) => {
     if (!activeSession || !activeSession.appointmentId) return;
+
+    // If only user is in room (count <= 1), professional has disconnected -> pause timer
+    if (count <= 1) {
+      console.log("Daily: Only 1 participant in call -> Pausing timer");
+      setIsTimerPaused(true);
+      isTimerPausedRef.current = true;
+    } else {
+      console.log("Daily: 2+ participants in call -> Resuming timer");
+      setIsTimerPaused(false);
+      isTimerPausedRef.current = false;
+    }
+
     try {
       await fetch(buildUrl(`${apiBase}/appointments/${activeSession.appointmentId}/participants`), {
         method: "POST",
@@ -1979,7 +2034,29 @@ export default function UserProfile({ apiBase = "/api" }) {
 
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 12, color: theme.muted }}>Time left</div>
-                      <div style={{ fontWeight: 800, fontSize: 18 }}>{String(timer.minutes).padStart(2, "0")}:{String(timer.seconds).padStart(2, "0")}</div>
+                      <div style={{
+                        fontWeight: 800,
+                        fontSize: 18,
+                        color: isTimerPaused ? "#d97706" : "#111827",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        justifyContent: "flex-end"
+                      }}>
+                        {String(timer.minutes).padStart(2, "0")}:{String(timer.seconds).padStart(2, "0")}
+                        {isTimerPaused && (
+                          <span style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            background: "#FEF3C7",
+                            color: "#B45309",
+                            padding: "2px 6px",
+                            borderRadius: 4
+                          }}>
+                            PAUSED
+                          </span>
+                        )}
+                      </div>
                       <button
                         onClick={async () => {
                           if (!confirm("Are you sure you want to end this session?")) return;
@@ -2014,6 +2091,25 @@ export default function UserProfile({ apiBase = "/api" }) {
                       </button>
                     </div>
                   </div>
+
+                  {isTimerPaused && (
+                    <div style={{
+                      background: "#FEF3C7",
+                      border: "1px solid #FCD34D",
+                      color: "#92400E",
+                      padding: "8px 14px",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      marginTop: "12px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px"
+                    }}>
+                      <span style={{ fontSize: "16px" }}>⏸️</span>
+                      <span>Professional has disconnected. Call time is paused until they rejoin.</span>
+                    </div>
+                  )}
 
                   <div style={{ marginTop: 12 }}>
                     <div
