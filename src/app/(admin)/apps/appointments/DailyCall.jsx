@@ -127,7 +127,7 @@ const DailyCall = forwardRef(
             top: 0,
             left: 0
           },
-          showLeaveButton: true,
+          showLeaveButton: false,
           showFullscreenButton: true,
           activeSpeakerMode: false,
           dailyConfig: {
@@ -141,6 +141,15 @@ const DailyCall = forwardRef(
         frame.on("joined-meeting", () => {
           setCallState("joined");
           if (onJoined) onJoined();
+          try {
+            const p = frame.participants() || {};
+            const count = Object.keys(p).length;
+            if (count >= 2) {
+              setBothJoined(true);
+              if (onBothJoined) onBothJoined();
+              if (onParticipantsUpdate) onParticipantsUpdate(count, p);
+            }
+          } catch { }
         });
 
         frame.on("participant-joined", () => {

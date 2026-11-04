@@ -897,6 +897,15 @@ export default function UserProfile({ apiBase = "/api" }) {
               pollBothJoinedRef.current = setInterval(async () => {
                 const s = await pollSessionRoom(appointmentId);
                 if (!s || !s.body) return;
+
+                if (s.body.session?.pausedAt || (s.body.session?.participants && s.body.session.participants.professionalJoined === false)) {
+                  setIsTimerPaused(true);
+                  isTimerPausedRef.current = true;
+                } else if (s.body.session?.participants?.professionalJoined === true && !s.body.session?.pausedAt) {
+                  setIsTimerPaused(false);
+                  isTimerPausedRef.current = false;
+                }
+
                 setActiveSession((prev) => {
                   if (!prev) {
                     return {
@@ -907,6 +916,14 @@ export default function UserProfile({ apiBase = "/api" }) {
                       session: s.body.session,
                       participants: s.body.session?.participants,
                     };
+                  }
+                  const prevExp = prev.session?.expiresAt ? new Date(prev.session.expiresAt).getTime() : 0;
+                  const newExp = s.body.session?.expiresAt ? new Date(s.body.session.expiresAt).getTime() : 0;
+                  const statusChanged = prev.session?.status !== s.body.session?.status;
+                  const bothJoinedChanged = (prev.participants?.bothJoinedAt !== s.body.session?.participants?.bothJoinedAt);
+                  const proJoinedChanged = (prev.participants?.professionalJoined !== s.body.session?.participants?.professionalJoined);
+                  if (prevExp === newExp && !statusChanged && !bothJoinedChanged && !proJoinedChanged) {
+                    return prev;
                   }
                   return {
                     ...prev,
@@ -964,8 +981,16 @@ export default function UserProfile({ apiBase = "/api" }) {
     };
   }, [activeSession?.appointmentId]);
 
+  const apptId = activeSession?.appointmentId;
+  const expiresAtVal = activeSession?.session?.expiresAt;
+  const bothJoined = !!(
+    activeSession?.participants &&
+    (activeSession.participants.bothJoinedAt ||
+      (activeSession.participants.professionalJoined && activeSession.participants.userJoined))
+  );
+
   useEffect(() => {
-    if (!activeSession || !activeSession.session) {
+    if (!apptId || !expiresAtVal) {
       clearInterval(countdownRef.current);
       setTimer({ minutes: 0, seconds: 0, totalSeconds: 0 });
       remainingSecondsRef.current = 0;
@@ -974,24 +999,21 @@ export default function UserProfile({ apiBase = "/api" }) {
       return;
     }
 
-    const { session, participants } = activeSession;
-    const bothJoined = !!(participants && (participants.bothJoinedAt || (participants.professionalJoined && participants.userJoined)));
-    if (!bothJoined || !session.expiresAt) {
+    if (!bothJoined) {
       clearInterval(countdownRef.current);
       setTimer({ minutes: 0, seconds: 0, totalSeconds: 0 });
       return;
     }
 
-    const computeSecondsLeft = () => {
+    // Only compute from wall-clock if not paused
+    if (!isTimerPausedRef.current) {
       const now = new Date();
-      const expires = new Date(session.expiresAt);
+      const expires = new Date(expiresAtVal);
       const diffSec = Math.max(0, Math.ceil((expires - now) / 1000));
-      return diffSec;
-    };
+      remainingSecondsRef.current = diffSec;
+      setTimer({ minutes: Math.floor(diffSec / 60), seconds: diffSec % 60, totalSeconds: diffSec });
+    }
 
-    const initial = computeSecondsLeft();
-    remainingSecondsRef.current = initial;
-    setTimer({ minutes: Math.floor(initial / 60), seconds: initial % 60, totalSeconds: initial });
     clearInterval(countdownRef.current);
 
     countdownRef.current = setInterval(async () => {
@@ -1011,15 +1033,15 @@ export default function UserProfile({ apiBase = "/api" }) {
       if (left <= 0) {
         clearInterval(countdownRef.current);
         setShowExtendModal(false);
-        if (activeSession && activeSession.appointmentId) {
-          await callEndAppointment(activeSession.appointmentId);
+        if (apptId) {
+          await callEndAppointment(apptId);
         }
         window.location.reload();
       }
     }, 1000);
 
     return () => clearInterval(countdownRef.current);
-  }, [activeSession, callEndAppointment]);
+  }, [apptId, expiresAtVal, bothJoined, callEndAppointment]);
 
   const handleParticipantsUpdate = async (count, participants) => {
     if (!activeSession || !activeSession.appointmentId) return;

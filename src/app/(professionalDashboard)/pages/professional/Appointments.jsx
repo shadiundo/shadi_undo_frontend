@@ -407,7 +407,7 @@ function RecentAppointments() {
         if (parsed.expiresAt) parsed.expiresAt = Number(parsed.expiresAt);
         if (parsed.minEndTime) parsed.minEndTime = Number(parsed.minEndTime);
         setActiveCallInternal(parsed);
-        if (parsed.expiresAt && parsed.countdownStarted) {
+        if (parsed.expiresAt) {
           startOrUpdateCountdown(parsed.expiresAt);
         }
       }
@@ -525,36 +525,104 @@ function RecentAppointments() {
     }
   }, [fetchRecentAppointments, setActiveCallInternal]);
 
-  const endAppointment = useCallback(async (id) => {
-    if (activeCall && activeCall.id === id && isBeforeMinEnd(activeCall)) {
-      const waitSec = Math.ceil((Number(activeCall.minEndTime) - Date.now()) / 1000);
-      window.alert(`Minimum reserved time not finished. Wait ${Math.ceil(waitSec / 60)} minute(s) or let the timer run.`);
-      return;
+  const startOrUpdateCountdown = useCallback((expiresAtMs) => {
+    if (!expiresAtMs) return;
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
     }
+    const initialDiff = Math.max(0, Number(expiresAtMs) - Date.now());
+    setRemainingMs(initialDiff);
 
-    const confirmed = await openModal({ title: "End session", render: "confirmEnd" });
-    if (!confirmed) return;
+    countdownIntervalRef.current = setInterval(() => {
+      const call = activeCallRef.current;
+      const targetExp = call?.expiresAt ? Number(call.expiresAt) : expiresAtMs;
+      const next = Math.max(0, targetExp - Date.now());
+      setRemainingMs(next);
+
+      if (next <= 2 * 60 * 1000 && call && !call.twoMinutePromptShown) {
+        setActiveCallInternal((c) => (c ? { ...c, twoMinutePromptShown: true } : c));
+        openModal({ title: "Session ending soon", render: "extendPrompt" }).then((choice) => {
+          if ([15, 30].includes(Number(choice))) {
+            extendAppointment(call.id);
+          }
+        }).catch(() => { });
+      }
+
+      if (next <= 0) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+        if (call && call.id) {
+          doPostAction(`/api/appointments/${call.id}/end`, {}, call.id);
+          setActiveCallInternal(null);
+          setRemainingMs(null);
+        }
+      }
+    }, 1000);
+  }, [extendAppointment, doPostAction, setActiveCallInternal]);
+
+  const formatRemaining = useCallback((ms) => {
+    if (ms === null || ms === undefined) {
+      const call = activeCallRef.current;
+      if (call?.expiresAt) {
+        const diff = Math.max(0, Number(call.expiresAt) - Date.now());
+        const total = Math.floor(diff / 1000);
+        const m = Math.floor(total / 60).toString().padStart(2, "0");
+        const s = Math.floor(total % 60).toString().padStart(2, "0");
+        return `${m}:${s}`;
+      }
+      return "30:00";
+    }
+    if (ms <= 0) return "00:00";
+    const total = Math.floor(ms / 1000);
+    const m = Math.floor(total / 60).toString().padStart(2, "0");
+    const s = Math.floor(total % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  }, []);
+
+  const leaveCall = useCallback(async (id) => {
+    const ok = window.confirm(
+      "Kya aap consultation call chhodna (disconnect) chahte hain?\n(User ka timer pause ho jayega aur aap baad mein Rejoin kar sakte hain)"
+    );
+    if (!ok) return;
 
     try {
-      if (jitsiRef.current && typeof jitsiRef.current.hangup === "function") {
-        try { await jitsiRef.current.hangup(); } catch (e) { console.warn('hangup api error', e); }
-        try { if (jitsiRef.current.dispose) jitsiRef.current.dispose(); } catch (e) { }
-      } else {
-        const possibleSelectors = [];
-        if (activeCall?.roomName) possibleSelectors.push(`iframe[src*='${activeCall.roomName}']`);
-        possibleSelectors.push("iframe[src*='meet.jit.si']", "iframe[src*='8x8.vc']", "iframe[src*='jitsi.']");
-        let removed = false;
-        for (const sel of possibleSelectors) {
-          const iframe = document.querySelector(sel);
-          if (iframe && iframe.parentNode) {
-            iframe.parentNode.removeChild(iframe);
-            removed = true;
-          }
-        }
-        if (!removed) {
-          const appIframe = document.querySelector("iframe");
-          if (appIframe && appIframe.parentNode) appIframe.parentNode.removeChild(appIframe);
-        }
+      if (jitsiRef.current && typeof jitsiRef.current.leave === "function") {
+        try { await jitsiRef.current.leave(); } catch (e) { console.warn("leave error", e); }
+      }
+    } catch (e) {
+      console.warn("hangup failed", e);
+    }
+
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+
+    const callId = id || activeCallRef.current?.id;
+    if (callId) {
+      socket.emit("professional-left", { appointmentId: callId });
+      delete prevParticipantsRef.current[callId];
+      if (typeof reportParticipantsToServer === "function") {
+        reportParticipantsToServer(callId, { professionalJoined: false }).catch(() => { });
+      }
+    }
+    participantTrackingInitializedRef.current = false;
+
+    setActiveCallInternal(null);
+    setRemainingMs(null);
+    await fetchRecentAppointments();
+  }, [setActiveCallInternal, fetchRecentAppointments]);
+
+  const endAppointment = useCallback(async (id) => {
+    const ok = window.confirm(
+      "Kya aap ye consultation appointment permanently END karna chahte hain?\nAre you sure you want to permanently end this session?"
+    );
+    if (!ok) return;
+
+    try {
+      if (jitsiRef.current && typeof jitsiRef.current.leave === "function") {
+        try { await jitsiRef.current.leave(); } catch (e) { console.warn("leave error", e); }
       }
     } catch (e) {
       console.warn("hangup failed", e);
@@ -569,9 +637,10 @@ function RecentAppointments() {
       sessionFallbackTimerRef.current = null;
     }
 
-    // Clear participant tracking for this session
-    if (activeCall?.id) {
-      delete prevParticipantsRef.current[activeCall.id];
+    const callId = id || activeCallRef.current?.id;
+    if (callId) {
+      socket.emit("professional-left", { appointmentId: callId });
+      delete prevParticipantsRef.current[callId];
     }
     participantTrackingInitializedRef.current = false;
 
@@ -579,7 +648,8 @@ function RecentAppointments() {
     setRemainingMs(null);
 
     await doPostAction(`/api/appointments/${id}/end`, {}, id);
-  }, [activeCall, setActiveCallInternal, doPostAction]);
+    await fetchRecentAppointments();
+  }, [setActiveCallInternal, doPostAction, fetchRecentAppointments]);
 
   const reportParticipantsToServer = useCallback(async (id, { professionalJoined, userJoined, userLeft } = {}) => {
     if (!id) return;
@@ -650,9 +720,10 @@ function RecentAppointments() {
       }
 
       const serverExpires = startBody.session?.expiresAt ||
+        startBody.data?.session?.expiresAt ||
         (startBody.session?.expiresAtIso ? Date.parse(startBody.session.expiresAtIso) : null);
       const fallbackExpiresAt = Date.now() + minInitial * 60 * 1000;
-      const expiresAt = serverExpires ? Number(serverExpires) : fallbackExpiresAt;
+      const expiresAt = serverExpires ? Number(new Date(serverExpires).getTime()) : fallbackExpiresAt;
       const minEndTime = Date.now() + 30 * 60 * 1000;
 
       const newActive = {
@@ -662,7 +733,7 @@ function RecentAppointments() {
         initialMinutes: minInitial,
         expiresAt,
         minEndTime,
-        countdownStarted: false,
+        countdownStarted: true,
         twoMinutePromptShown: false,
       };
 
@@ -671,6 +742,7 @@ function RecentAppointments() {
       participantTrackingInitializedRef.current = false;
 
       setActiveCallInternal(newActive);
+      startOrUpdateCountdown(expiresAt);
 
       if (serverExpires) {
         const remaining = Number(serverExpires) - Date.now();
@@ -721,9 +793,12 @@ function RecentAppointments() {
       const apptRes = await doFetch(`/api/appointments/${id}`, { method: "GET", headers: { ...tokenHeader() } });
       const apptBody = await parseJsonSafe(apptRes);
       const appt = apptBody?.appointment;
-      const serverExpires = appt?.session?.expiresAt || (appt?.session?.expiresAtIso ? Date.parse(appt.session.expiresAtIso) : null);
+      const serverExpires = sessionBody.session?.expiresAt ||
+        data.session?.expiresAt ||
+        appt?.session?.expiresAt ||
+        (appt?.session?.expiresAtIso ? Date.parse(appt.session.expiresAtIso) : null);
       const fallbackExpiresAt = Date.now() + 30 * 60 * 1000;
-      const expiresAt = serverExpires ? Number(serverExpires) : fallbackExpiresAt;
+      const expiresAt = serverExpires ? Number(new Date(serverExpires).getTime()) : fallbackExpiresAt;
       const minEndTime = Date.now() + 30 * 60 * 1000;
 
       const newActive = {
@@ -740,6 +815,7 @@ function RecentAppointments() {
       prevParticipantsRef.current[id] = { count: 1, userJoined: false };
       participantTrackingInitializedRef.current = false;
       setActiveCallInternal(newActive);
+      startOrUpdateCountdown(expiresAt);
 
       socket.emit("professional-joined", { appointmentId: id });
       await reportParticipantsToServer(id, { professionalJoined: true });
@@ -750,7 +826,7 @@ function RecentAppointments() {
     } finally {
       setActionLoadingId(null);
     }
-  }, [doFetch, tokenHeader, setActiveCallInternal, reportParticipantsToServer]);
+  }, [doFetch, tokenHeader, setActiveCallInternal, startOrUpdateCountdown, reportParticipantsToServer]);
 
   const handleBothJoined = useCallback(async () => {
     if (!activeCall) return;
@@ -793,7 +869,7 @@ function RecentAppointments() {
       startOrUpdateCountdown(updated.expiresAt);
       reportParticipantsToServer(id, { professionalJoined: true, userJoined: true }).catch((e) => console.warn("report participants failed", e));
     }
-  }, [activeCall, setActiveCallInternal]);
+  }, [activeCall, setActiveCallInternal, startOrUpdateCountdown, doFetch, tokenHeader, reportParticipantsToServer]);
 
   const handleParticipantsUpdate = useCallback((count, participants) => {
     if (!activeCall) return;
@@ -935,52 +1011,23 @@ function RecentAppointments() {
     return () => clearInterval(interval);
   }, [activeCall, setActiveCallInternal, tokenHeader]);
 
-  const startOrUpdateCountdown = useCallback((expiresAtMs) => {
-    if (!expiresAtMs) return;
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-      countdownIntervalRef.current = null;
+  useEffect(() => {
+    if (activeCall?.expiresAt && !countdownIntervalRef.current) {
+      startOrUpdateCountdown(Number(activeCall.expiresAt));
     }
-    setRemainingMs(Math.max(0, expiresAtMs - Date.now()));
+  }, [activeCall?.id, activeCall?.expiresAt, startOrUpdateCountdown]);
 
-    countdownIntervalRef.current = setInterval(() => {
-      setRemainingMs((prev) => {
-        const next = (prev ?? Math.max(0, expiresAtMs - Date.now())) - 1000;
-        const call = activeCallRef.current;
-
-        if (next <= 2 * 60 * 1000 && call && !call.twoMinutePromptShown) {
-
-          setActiveCallInternal((c) => (c ? { ...c, twoMinutePromptShown: true } : c));
-          openModal({ title: "Session ending soon", render: "extendPrompt" }).then((choice) => {
-            if ([15, 30].includes(Number(choice))) {
-              extendAppointment(call.id);
-
-            }
-          }).catch(() => { });
-        }
-
-        if (next <= 0) {
-          clearInterval(countdownIntervalRef.current);
-          countdownIntervalRef.current = null;
-          if (call && call.id) {
-            doPostAction(`/api/appointments/${call.id}/end`, {}, call.id);
-            setActiveCallInternal(null);
-            setRemainingMs(null);
-          }
-          return 0;
-        }
-        return next;
-      });
-    }, 1000);
-  }, [activeCall, extendAppointment, doPostAction, setActiveCallInternal]);
-
-  const formatRemaining = (ms) => {
-    if (!ms || ms <= 0) return "00:00";
-    const total = Math.floor(ms / 1000);
-    const m = Math.floor(total / 60).toString().padStart(2, "0");
-    const s = Math.floor(total % 60).toString().padStart(2, "0");
-    return `${m}:${s}`;
-  };
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (activeCallRef.current) {
+        e.preventDefault();
+        e.returnValue = "You have an active consultation call running. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   const statusStyles = (status) => {
     const k = (status || "").toLowerCase();
@@ -1413,14 +1460,14 @@ function RecentAppointments() {
                 {!isXS && "Extend"}
               </button>
               <button
-                onClick={() => endAppointment(activeCall.id)}
+                onClick={() => leaveCall(activeCall.id)}
                 style={{
                   padding: "10px 18px",
                   borderRadius: "8px",
-                  background: isBeforeMinEnd(activeCall) ? "#F3F4F6" : "#DC2626",
-                  color: isBeforeMinEnd(activeCall) ? "#9CA3AF" : "#FFFFFF",
+                  background: "#DC2626",
+                  color: "#FFFFFF",
                   border: "none",
-                  cursor: isBeforeMinEnd(activeCall) ? "not-allowed" : "pointer",
+                  cursor: "pointer",
                   fontSize: "14px",
                   flex: isSM ? 1 : "none",
                   display: "flex",
@@ -1428,14 +1475,13 @@ function RecentAppointments() {
                   justifyContent: "center",
                   gap: "6px",
                   fontWeight: 600,
-                  boxShadow: isBeforeMinEnd(activeCall) ? "none" : "0 2px 6px rgba(220,38,38,0.3)",
+                  boxShadow: "0 2px 6px rgba(220,38,38,0.3)",
                   transition: "all 0.2s ease"
                 }}
-                disabled={isBeforeMinEnd(activeCall)}
-                title={isBeforeMinEnd(activeCall) ? "Minimum reserved time not finished" : "End session"}
+                title="Disconnect call (can rejoin later)"
               >
                 <IconifyIcon icon="mdi:phone-hangup" style={{ fontSize: "16px" }} />
-                {!isXS && "End"}
+                {!isXS && "Leave Call"}
               </button>
             </div>
           </div>
@@ -1877,7 +1923,7 @@ function RecentAppointments() {
                         width: "100%",
                         flexWrap: "wrap"
                       }}>
-                        {(!activeCall || activeCall.id !== id) && (
+                        {(!activeCall || activeCall.id !== id) ? (
                           <button
                             onClick={() => rejoinAppointment(id)}
                             style={{
@@ -1900,6 +1946,30 @@ function RecentAppointments() {
                           >
                             <IconifyIcon icon="solar:videocamera-record-bold" style={{ fontSize: "18px" }} />
                             Rejoin Call
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => leaveCall(id)}
+                            style={{
+                              padding: "10px 16px",
+                              borderRadius: "8px",
+                              background: "#EF4444",
+                              color: "#FFFFFF",
+                              border: "none",
+                              fontSize: "14px",
+                              width: "100%",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "8px",
+                              fontWeight: 600,
+                              boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                              transition: "all 0.2s ease"
+                            }}
+                          >
+                            <IconifyIcon icon="mdi:phone-hangup" style={{ fontSize: "16px" }} />
+                            Leave Call
                           </button>
                         )}
                         <button
