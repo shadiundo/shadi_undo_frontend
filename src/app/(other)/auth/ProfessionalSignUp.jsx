@@ -1,5 +1,5 @@
 // ProfessionalSignUp.jsx
-import React, { useState, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -20,10 +20,12 @@ import {
   CardHeader,
   CardTitle,
   Spinner,
+  Modal,
 } from "react-bootstrap";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import logo from "@/assets/images/shadiundo.png";
 
 // ---------------- validation schema ----------------
 const schema = yup.object({
@@ -55,11 +57,11 @@ const schema = yup.object({
   ),
   additionalDocuments: yup.array().of(
     yup.object({
-      title: yup.string().required("Title required"),
-      description: yup.string().nullable(),
-      fileUrl: yup.string().nullable(),
+      title: yup.string().nullable().notRequired(),
+      description: yup.string().nullable().notRequired(),
+      fileUrl: yup.string().nullable().notRequired(),
     })
-  ),
+  ).nullable().notRequired(),
   undertaking: yup.bool().oneOf([true], "You must accept the undertaking"),
   terms: yup.bool().oneOf([true], "You must agree to the Terms and Conditions"),
 });
@@ -211,7 +213,7 @@ const ProfessionalSignUp = () => {
       specialties: [],
       location: { country: "IN", state: "", city: "" },
       documents: [{ type: "", fileUrl: "" }],
-      additionalDocuments: [{ title: "", description: "", fileUrl: "" }],
+      additionalDocuments: [],
       undertaking: false,
       terms: false,
     },
@@ -224,6 +226,23 @@ const ProfessionalSignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  // Email OTP Verification state
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [pendingData, setPendingData] = useState(null);
+  const [otpValue, setOtpValue] = useState("");
+  const [otpError, setOtpError] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+
+  useEffect(() => {
+    let timer;
+    if (resendTimer > 0) {
+      timer = setTimeout(() => setResendTimer((t) => t - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [resendTimer]);
 
   const setUploadState = useCallback((key, patch) => {
     setUploadingMap((m) => ({ ...(m || {}), [key]: { ...(m?.[key] || {}), ...patch } }));
@@ -262,7 +281,7 @@ const ProfessionalSignUp = () => {
       { value: "domestic violence", label: "Domestic Violence" },
       { value: "maintenance", label: "Maintenance" },
       { value: "trauma counselling", label: "Trauma Counselling" },
-      { value: "corporate law", label: "Corporate Law" },
+
     ],
     []
   );
@@ -289,7 +308,7 @@ const ProfessionalSignUp = () => {
     }
   }
 
-  // --- inside your component ---
+  // --- 1. Step 1: Validate Form & Send Email OTP ---
   const onSubmit = async (data) => {
     if (anyUploadInProgress()) {
       alert("Please wait until all uploads finish.");
@@ -298,18 +317,94 @@ const ProfessionalSignUp = () => {
 
     setSubmitting(true);
     try {
+      const base = import.meta.env.VITE_API_URL || "";
+      const sendOtpUrl = `${base}/api/professionals/send-registration-otp`;
+
+      console.log("[send-registration-otp] sending request to", sendOtpUrl);
+      const res = await fetchWithTimeout(
+        sendOtpUrl,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: data.email, name: data.name, role: data.role }),
+        },
+        20000
+      );
+
+      const result = await res.json().catch(() => ({}));
+      if (res.ok && result?.success) {
+        setPendingData(data);
+        setOtpValue("");
+        setOtpError("");
+        setShowOtpModal(true);
+        setResendTimer(30);
+        toast.info(result.message || `Verification code sent to ${data.email}`);
+      } else {
+        alert(result?.message || "Failed to send verification code. Please try again.");
+      }
+    } catch (err) {
+      console.error("[send-registration-otp] error:", err);
+      alert(err.message || "Network error while sending verification code.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // --- 2. Resend Email OTP ---
+  const handleResendOtp = async () => {
+    if (!pendingData?.email || resendTimer > 0) return;
+    setResending(true);
+    setOtpError("");
+    try {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetchWithTimeout(
+        `${base}/api/professionals/send-registration-otp`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: pendingData.email, name: pendingData.name, role: pendingData.role }),
+        },
+        20000
+      );
+      const result = await res.json().catch(() => ({}));
+      if (res.ok && result?.success) {
+        setResendTimer(30);
+        toast.success(result.message || "New OTP sent to your email!");
+      } else {
+        setOtpError(result.message || "Failed to resend OTP.");
+      }
+    } catch (err) {
+      setOtpError(err.message || "Failed to resend OTP.");
+    } finally {
+      setResending(false);
+    }
+  };
+
+  // --- 3. Step 2: Verify OTP & Create Account ---
+  const handleVerifyAndRegister = async () => {
+    if (!otpValue || otpValue.trim().length !== 6) {
+      setOtpError("Please enter the 6-digit verification code.");
+      return;
+    }
+
+    setVerifying(true);
+    setOtpError("");
+    try {
       const payload = {
-        ...data,
+        ...pendingData,
+        otp: otpValue.trim(),
         defaultRate: 1100, // Set default rate to 1100
         tier: "A", // Default tier
-        specialties: (data.specialties || []).map((s) => s.value || s.label || s),
+        specialties: (pendingData.specialties || []).map((s) => s.value || s.label || s),
+        additionalDocuments: (pendingData.additionalDocuments || []).filter(
+          (doc) => doc && doc.title && doc.fileUrl
+        ),
       };
 
       const base = import.meta.env.VITE_API_URL || "";
       const url = `${base}/api/professionals/register`;
 
-      console.log("[register] sending request to", url);
-
+      console.log("[register] sending verified request to", url);
       const start = Date.now();
       const res = await fetchWithTimeout(
         url,
@@ -337,10 +432,12 @@ const ProfessionalSignUp = () => {
         toast.success(result?.message || "Registered successfully!");
         if (result?.token) localStorage.setItem("token", result.token);
 
-        alert("Registration successful! A confirmation email will be sent to your inbox shortly.");
         if (result?.professional?.profileCompletion != null) {
           localStorage.setItem("profileCompletion", result.professional.profileCompletion);
         }
+
+        setShowOtpModal(false);
+        alert("Email verified and account registered successfully! You can now log in.");
 
         // reset form
         reset({
@@ -354,25 +451,25 @@ const ProfessionalSignUp = () => {
           specialties: [],
           location: { country: "IN", state: "", city: "" },
           documents: [{ type: "", fileUrl: "" }],
-          additionalDocuments: [{ title: "", description: "", fileUrl: "" }],
+          additionalDocuments: [],
           undertaking: false,
           terms: false,
         });
 
         setUploadingMap({});
-        setTimeout(() => navigate("/auth/professional-login"), 1000);
+        setTimeout(() => navigate("/auth/professional-login"), 800);
       } else {
-        alert(`Registration failed: ${result?.message || "Unknown error"}`);
+        setOtpError(result?.message || "Verification failed. Please check the OTP.");
       }
     } catch (err) {
-      console.error("[register] fetch error:", err);
+      console.error("[register] verify error:", err);
       if (err.name === "AbortError") {
-        alert("Registration timed out — server did not respond in time.");
+        setOtpError("Request timed out — server did not respond in time.");
       } else {
-        alert("Registration error: " + (err?.message || "Unknown"));
+        setOtpError(err?.message || "Registration error. Please try again.");
       }
     } finally {
-      setSubmitting(false);
+      setVerifying(false);
     }
   };
 
@@ -426,12 +523,20 @@ const ProfessionalSignUp = () => {
 
       <div style={containerStyle}>
         <Card style={cardStyle} className="shadow-lg auth-card">
-          <CardHeader style={{ background: "#fff", borderBottom: "1px solid rgba(0,0,0,0.04)", padding: 18 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <CardHeader style={{ background: "#fff", borderBottom: "1px solid rgba(0,0,0,0.06)", padding: "16px 24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
               <div>
-                <CardTitle as="h4" style={{ margin: 0 }}>Professional Sign Up</CardTitle>
-                <div style={{ color: "#6b7280", fontSize: 13 }}>Register as a lawyer, mediator, counsellor or therapist</div>
+                <CardTitle as="h4" style={{ margin: 0, fontWeight: 700, color: "#141C2C" }}>Professional Sign Up</CardTitle>
+                <div style={{ color: "#6b7280", fontSize: 13, marginTop: 4 }}>Register as a lawyer, mediator, counsellor or therapist</div>
               </div>
+
+              <Link to="/" title="Shaadi Undo - Home" style={{ display: "inline-flex", alignItems: "center" }}>
+                <img
+                  src={logo}
+                  alt="Shaadi Undo"
+                  style={{ height: 48, maxHeight: 48, width: "auto", objectFit: "contain" }}
+                />
+              </Link>
             </div>
           </CardHeader>
 
@@ -815,7 +920,7 @@ const ProfessionalSignUp = () => {
                   }}
                 >
                   <h4 style={{ margin: 0, color: "#5d7186" }}>
-                    Additional Documents
+                    Additional Documents <span style={{ fontSize: 13, color: "#9ca3af", fontWeight: 400 }}>(Optional)</span>
                   </h4>
 
                   <Button
@@ -942,6 +1047,139 @@ const ProfessionalSignUp = () => {
             </Form>
           </CardBody>
         </Card>
+
+        {/* Email Verification OTP Modal */}
+        <Modal
+          show={showOtpModal}
+          onHide={() => !verifying && setShowOtpModal(false)}
+          centered
+          backdrop="static"
+        >
+          <Modal.Header closeButton={!verifying} style={{ borderBottom: "1px solid rgba(0,0,0,0.06)", padding: "16px 24px" }}>
+            <Modal.Title style={{ fontWeight: 700, color: "#141C2C", fontSize: 18 }}>
+              Email Verification
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body style={{ padding: "28px 24px" }}>
+            <div style={{ textAlign: "center", marginBottom: 20 }}>
+              <div
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: "50%",
+                  background: "rgba(202, 170, 147, 0.18)",
+                  color: "#b89882",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 28,
+                  marginBottom: 12,
+                }}
+              >
+                ✉️
+              </div>
+              <h5 style={{ fontWeight: 700, color: "#141C2C", marginBottom: 6 }}>
+                Check Your Inbox
+              </h5>
+              <p style={{ color: "#6b7280", fontSize: 14, margin: 0 }}>
+                We've sent a 6-digit verification code to
+              </p>
+              <div style={{ fontWeight: 700, color: "#141C2C", fontSize: 15, marginTop: 4 }}>
+                {pendingData?.email}
+              </div>
+            </div>
+
+            {otpError && (
+              <div
+                className="alert alert-danger py-2 text-center"
+                style={{ fontSize: 13, borderRadius: 8, marginBottom: 16 }}
+              >
+                {otpError}
+              </div>
+            )}
+
+            <Form.Group style={{ marginBottom: 16 }}>
+              <Form.Control
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="000000"
+                value={otpValue}
+                onChange={(e) => {
+                  setOtpValue(e.target.value.replace(/\D/g, ""));
+                  setOtpError("");
+                }}
+                style={{
+                  textAlign: "center",
+                  fontSize: 26,
+                  letterSpacing: 10,
+                  fontWeight: 700,
+                  padding: "12px",
+                  borderRadius: 10,
+                  borderColor: otpError ? "#dc2626" : "#CAAA93",
+                  boxShadow: "0 0 0 3px rgba(202, 170, 147, 0.15)",
+                }}
+                autoFocus
+              />
+            </Form.Group>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                fontSize: 13,
+                color: "#6b7280",
+              }}
+            >
+              <span>Didn't receive the email?</span>
+              {resendTimer > 0 ? (
+                <span style={{ fontWeight: 600 }}>Resend in {resendTimer}s</span>
+              ) : (
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={handleResendOtp}
+                  disabled={resending}
+                  style={{ padding: 0, fontWeight: 700, color: "#CAAA93", textDecoration: "none" }}
+                >
+                  {resending ? "Sending..." : "Resend OTP"}
+                </Button>
+              )}
+            </div>
+          </Modal.Body>
+          <Modal.Footer style={{ borderTop: "1px solid rgba(0,0,0,0.06)", padding: "14px 24px", display: "flex", justifyContent: "space-between" }}>
+            <Button
+              variant="outline-secondary"
+              onClick={() => setShowOtpModal(false)}
+              disabled={verifying}
+              style={{ borderRadius: 8, padding: "8px 16px", fontSize: 14 }}
+            >
+              Edit Details
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleVerifyAndRegister}
+              disabled={verifying || otpValue.trim().length !== 6}
+              style={{
+                background: "#CAAA93",
+                borderColor: "#CAAA93",
+                borderRadius: 8,
+                padding: "8px 20px",
+                fontWeight: 700,
+                fontSize: 14,
+              }}
+            >
+              {verifying ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-1" /> Verifying...
+                </>
+              ) : (
+                "Verify & Register"
+              )}
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </div>
     </div>
   );

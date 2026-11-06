@@ -12,6 +12,14 @@ const AppProvidersWrapper = ({
   children
 }) => {
   useEffect(() => {
+    // Non-blocking background backend pre-warm (wakes up Render container if idle)
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (apiUrl) {
+      fetch(`${apiUrl}/api/health`, { method: "GET", keepalive: true }).catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
     document.addEventListener('visibilitychange', handleChangeTitle);
     return () => {
       document.removeEventListener('visibilitychange', handleChangeTitle);

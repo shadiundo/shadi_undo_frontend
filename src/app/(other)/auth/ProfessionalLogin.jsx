@@ -16,7 +16,6 @@ import signInImg from "@/assets/images/sign-in.png";
 import LogoBox from "@/components/LogoBox";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "@/context/useAuthContext";
-import "./ProfessionalSignUp";
 
 // ---------------- VALIDATION ----------------
 const schema = yup.object({

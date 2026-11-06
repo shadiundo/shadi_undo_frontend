@@ -1442,6 +1442,8 @@ export default function Homepage() {
 
       <div style={{ height: 40, marginTop: "150px" }} />
 
+      <BookingCategories />
+
       <HorizontalProfessionals role="lawyer" />
       <HorizontalProfessionals role="counsellor" />
       <HorizontalProfessionals role="mediator" />
@@ -1510,7 +1512,6 @@ export default function Homepage() {
         </ServicesWrapper>
       </ServicesSection>
 
-      <BookingCategories />
       <KnowledgeCentre />
       <SuccessfulStories />
     </Main>

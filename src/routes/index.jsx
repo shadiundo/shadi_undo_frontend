@@ -1,25 +1,28 @@
-import Counsellors from '@/app/(admin)/apps/contacts/Counsellor';
-import Lawyers from '@/app/(admin)/apps/contacts/Lawyer';
-import Mediators from '@/app/(admin)/apps/contacts/Mediator';
-import Therapists from '@/app/(admin)/apps/contacts/Therapits';
-import About from '@/app/(admin)/pages/Main/About';
-import BookAppointment from '@/app/(admin)/pages/Main/BookAppointment';
-import Contact from '@/app/(admin)/pages/Main/Contact';
-import CounsellorList from '@/app/(admin)/pages/Main/CounsellorList';
-import Home from '@/app/(admin)/pages/Main/Home';
-import LawyerList from '@/app/(admin)/pages/Main/LawyerList';
-import MediatorList from '@/app/(admin)/pages/Main/MediatorList';
-import PartnerWithUs from '@/app/(admin)/pages/Main/PartnerWithUs';
-import PeculiarCases from '@/app/(admin)/pages/Main/PeculiarCases';
-import ProfilePage from '@/app/(admin)/pages/Main/ProfilePage';
-import Services from '@/app/(admin)/pages/Main/Services';
-import TherapitsList from '@/app/(admin)/pages/Main/TherapitsList';
-import UserProfile, { EditProfile } from '@/app/(admin)/pages/Main/UserProfile';
-import ProfessionalLogin from '@/app/(other)/auth/ProfessionalLogin';
-import ProfessionalSignUp from '@/app/(other)/auth/ProfessionalSignUp';
-import ProfessionalRoutes from '@/app/(professionalDashboard)/routes/professionalRoutes';
 import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
+
+const Counsellors = lazy(() => import('@/app/(admin)/apps/contacts/Counsellor'));
+const Lawyers = lazy(() => import('@/app/(admin)/apps/contacts/Lawyer'));
+const Mediators = lazy(() => import('@/app/(admin)/apps/contacts/Mediator'));
+const Therapists = lazy(() => import('@/app/(admin)/apps/contacts/Therapits'));
+const About = lazy(() => import('@/app/(admin)/pages/Main/About'));
+const BookAppointment = lazy(() => import('@/app/(admin)/pages/Main/BookAppointment'));
+const Contact = lazy(() => import('@/app/(admin)/pages/Main/Contact'));
+const CounsellorList = lazy(() => import('@/app/(admin)/pages/Main/CounsellorList'));
+const Home = lazy(() => import('@/app/(admin)/pages/Main/Home'));
+const LawyerList = lazy(() => import('@/app/(admin)/pages/Main/LawyerList'));
+const MediatorList = lazy(() => import('@/app/(admin)/pages/Main/MediatorList'));
+const PartnerWithUs = lazy(() => import('@/app/(admin)/pages/Main/PartnerWithUs'));
+const PeculiarCases = lazy(() => import('@/app/(admin)/pages/Main/PeculiarCases'));
+const ProfilePage = lazy(() => import('@/app/(admin)/pages/Main/ProfilePage'));
+const Services = lazy(() => import('@/app/(admin)/pages/Main/Services'));
+const TherapitsList = lazy(() => import('@/app/(admin)/pages/Main/TherapitsList'));
+const UserProfile = lazy(() => import('@/app/(admin)/pages/Main/UserProfile'));
+const EditProfile = lazy(() =>
+  import('@/app/(admin)/pages/Main/UserProfile').then((m) => ({ default: m.EditProfile }))
+);
+const ProfessionalLogin = lazy(() => import('@/app/(other)/auth/ProfessionalLogin'));
+const ProfessionalSignUp = lazy(() => import('@/app/(other)/auth/ProfessionalSignUp'));
 
 
 

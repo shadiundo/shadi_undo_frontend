@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuthContext } from "@/context/useAuthContext";
-import avatar1 from "@/assets/images/users/avatar-1.jpg";
+import defaultAvatar from "@/assets/images/users/dummy-avatar.jpg";
 import { FaBalanceScale, FaBolt, FaMoneyBillWave, FaStopwatch } from "react-icons/fa";
 import "./Profile.css";
 
@@ -595,7 +595,15 @@ export default function Profile() {
 
         <div className="profile-header">
           <div className="header-left">
-            <img src={profile.avatar ?? avatar1} alt={profile.name ?? "Profile"} className="profile-avatar" />
+            <img
+              src={profile.profilePhoto || profile.avatar || defaultAvatar}
+              alt={profile.name ?? "Profile"}
+              className="profile-avatar"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = defaultAvatar;
+              }}
+            />
             <div className="header-text">
               {profile.name && <h1 className="profile-name">{profile.name}</h1>}
               {profile.role && <p className="profile-subtitle">{profile.role}</p>}

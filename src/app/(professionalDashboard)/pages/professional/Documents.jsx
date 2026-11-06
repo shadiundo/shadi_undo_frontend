@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useAuthContext } from "@/context/useAuthContext";
-import avatarPlaceholder from "@/assets/images/users/avatar-1.jpg";
+import defaultAvatar from "@/assets/images/users/dummy-avatar.jpg";
 
 const DEFAULT_TIMEOUT = 7000;
 function fetchWithTimeout(input, init = {}, timeout = DEFAULT_TIMEOUT) {
@@ -289,7 +289,15 @@ const handleUpload = async (e) => {
       <h2 style={s.heading}>Documents</h2>
 
       <div style={s.header}>
-        <img src={profile.avatar ?? avatarPlaceholder} alt="avatar" style={s.avatar} />
+        <img
+          src={profile.profilePhoto || profile.avatar || defaultAvatar}
+          alt="avatar"
+          style={s.avatar}
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = defaultAvatar;
+          }}
+        />
         <div>
           <div style={s.name}>{profile.name ?? profile.email}</div>
           <div style={s.muted}>{profile.role ?? "Professional"}</div>

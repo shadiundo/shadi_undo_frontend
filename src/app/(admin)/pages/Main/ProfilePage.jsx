@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuthContext } from "@/context/useAuthContext";
-import avatar1 from "@/assets/images/users/avatar-1.jpg";
+import defaultAvatar from "@/assets/images/users/dummy-avatar.jpg";
 import educationIcon from "@/assets/images/educates 1.png";
 import experienceIcon from "@/assets/images/laws 1.png";
 import { FaBalanceScale, FaBolt, FaMoneyBillWave, FaStopwatch } from "react-icons/fa";
@@ -656,7 +656,7 @@ export default function ProfilePage() {
               id: p._id || p.id || `r-${i}`,
               _id: p._id || p.id || `r-${i}`,
               name: p.name || p.title || `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || "Unknown",
-              avatar: p.avatarUrl || p.avatar || p.photo || p.image || p.profileImage || avatar1,
+              avatar: p.avatarUrl || p.avatar || p.photo || p.image || p.profileImage || defaultAvatar,
               role: p.role || p.title || p.profession || "Professional",
               specialties: specialties || [],
               location: p.location || p.address || (p.city ? { city: p.city } : null),
@@ -844,7 +844,7 @@ export default function ProfilePage() {
         <div style={{ ...styles.recTop, flex: 1 }}> {/* Added flex: 1 to fill space */}
           <Link to={profileLink} style={{ textDecoration: "none", width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
             <div style={styles.recAvatarWrap}>
-              <img src={item.avatar || avatar1} alt={item.name} style={styles.recAvatar} onError={(e) => (e.currentTarget.src = avatar1)} />
+              <img src={item.avatar || defaultAvatar} alt={item.name} style={styles.recAvatar} onError={(e) => (e.currentTarget.src = defaultAvatar)} />
               <div style={{ ...styles.ratingPill, background: ratingBg }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden focusable="false"><path fill="currentColor" d="M12 .587l3.668 7.431L24 9.748l-6 5.847L19.335 24 12 20.201 4.665 24 6 15.595 0 9.748l8.332-1.73L12 .587z" /></svg>
@@ -938,7 +938,15 @@ export default function ProfilePage() {
         <div style={styles.header}>
           <div style={{ display: "flex", alignItems: "center", gap: 18, width: "100%", justifyContent: isMobile ? "center" : "flex-start" }}>
             <div style={styles.avatarWrap}>
-              <img src={profile.avatar ?? avatar1} alt={profile.name ?? "Profile"} style={styles.avatar} />
+              <img
+                src={profile.profilePhoto || profile.avatar || defaultAvatar}
+                alt={profile.name ?? "Profile"}
+                style={styles.avatar}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = defaultAvatar;
+                }}
+              />
             </div>
             <div style={styles.headerText}>
               {profile.name && <h1 style={styles.name}>{profile.name}</h1>}
